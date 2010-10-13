@@ -13,17 +13,19 @@ namespace PackageThis
     {
 
         private bool Disposed;
-        private XmlTextWriter writer;
+        private XmlWriter writer;
+
 
         // Constructor
         public Hxf(string filePath, Encoding encoding)
         {
          
             Disposed = false;
-            writer = new XmlTextWriter(filePath, encoding);
+            
+            XmlWriterSettings settings = new XmlWriterSettings { Indent = true, NewLineChars = Environment.NewLine, Encoding = encoding, };
+            writer = XmlWriter.Create(filePath, settings);
 
             // Write header
-            writer.Formatting = Formatting.Indented;
             writer.WriteStartDocument();
             writer.WriteDocType("HelpFileList", null, "MS-Help://Hx/Resources/HelpFileList.DTD", null);
             writer.WriteStartElement("HelpFileList");

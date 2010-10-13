@@ -10,16 +10,18 @@ namespace PackageThis
     public class Hxt
     {
         private bool Disposed;
-        private XmlTextWriter writer;
+        private XmlWriter writer;
+
         // Constructor
         public Hxt(string filePath, Encoding encoding)
         {
 
             Disposed = false;
-            writer = new XmlTextWriter(filePath, encoding);
+
+            XmlWriterSettings settings = new XmlWriterSettings { Indent = true, NewLineChars = Environment.NewLine, Encoding = encoding, };
+            writer = XmlWriter.Create(filePath, settings);
 
             // Write header
-            writer.Formatting = Formatting.Indented;
             writer.WriteStartDocument();
             writer.WriteDocType("HelpTOC", null, "MS-Help://Hx/Resources/HelpTOC.DTD", null);
             writer.WriteStartElement("HelpTOC");
@@ -53,6 +55,7 @@ namespace PackageThis
         {
 
             writer.WriteStartElement("HelpTOCNode");
+
             if (string.IsNullOrEmpty(title) != true)
             {
                 writer.WriteAttributeString("Title", title);

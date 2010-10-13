@@ -10,6 +10,11 @@ using System.Text;
 using System.Windows.Forms;
 using System.Globalization;
 using ContentServiceLibrary;
+using System.Reflection;
+using System.Diagnostics;
+using PackageThis.MtpsFiles;
+using MSHelpCompiler;
+using Microsoft.Win32;
 
 namespace PackageThis
 {
@@ -21,33 +26,49 @@ namespace PackageThis
         static private string tempPath;
         static private string tempDir;
 
-        static string tocLocale = currentLocale.ToLower();
-
         public MainForm()
         {
+            SplashForm.Init();
             InitializeComponent();
-            
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            // Unicode Start of String, chosen to avoid collisions possible with default sep
-            // when we serialize the path to a file.
-            TOCTreeView.PathSeparator = "\x0098";
+            try
+            {
+                this.Text = String.Format("Package This! - {0}", Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
-            CreateTempDir();
+                // Unicode Start of String, chosen to avoid collisions possible with default sep
+                // when we serialize the path to a file.
+                TOCTreeView.PathSeparator = "\x0098";
 
-            rootContentItem.currentLibrary = Properties.Settings.Default.currentLibrary;
-            
-            //statusStrip1.Items.Add(workingDir);
-            statusStrip1.Items.Add(rootContentItem.name);
+                CreateTempDir();
 
-            populateLocaleMenu();
-            populateLibraryMenu();
+                rootContentItem.currentLibrary = Properties.Settings.Default.currentLibrary;
 
-            appController = new AppController(rootContentItem.contentId, currentLocale, rootContentItem.version, 
-                TOCTreeView, workingDir);
+                //statusStrip1.Items.Add(workingDir);
+                statusStrip1.Items.Add(rootContentItem.name);
 
+                SplashForm.Status("Connecting to server...");  //First time we hit the server (at least in Australia) we get a 15 sec delay
+                populateLocaleMenu();
+
+                SplashForm.Status("Loading controls...");
+                populateLibraryMenu();
+
+                appController = new AppController(rootContentItem.contentId, currentLocale, rootContentItem.version,
+                    TOCTreeView, workingDir);
+
+            }
+            finally
+            {
+                SplashForm.Done();
+            }
+        }
+
+        private void MainForm_Shown(object sender, EventArgs e)
+        {
+            this.BringToFront();
+            this.Activate();  //The splash form will kick us to the back. This brings us forward again.
         }
 
         private void selectLocale_Click(object sender, EventArgs e)
@@ -59,26 +80,25 @@ namespace PackageThis
         private void populateLocaleMenu()
         {
             SortedDictionary<string, string> locales;
+            ToolStripMenuItem menuItem;
 
-            int i = 0;
+            locales = Utility.GetLocales();   //First server call -- Slow -- Up to 15 seconds on an i7 notebook from Australia - But fast if you call the server again
 
-            locales = Utility.GetLocales();
+            localeToolStripMenuItem.DropDownItems.Clear();
 
             foreach (string displayName in locales.Keys)
             {
-                ToolStripMenuItem menuItem = new ToolStripMenuItem(displayName, null, 
-                    localeToolStripMenuItem_Click);
-
-
+                menuItem = new ToolStripMenuItem(displayName, null, localeToolStripMenuItem_Click);
                 menuItem.Name = locales[displayName];
+                localeToolStripMenuItem.DropDownItems.Add(menuItem);
 
-                localeToolStripMenuItem.DropDownItems.Insert(i++, menuItem);
-
-                if (currentLocale == locales[displayName])
+                //if (currentLocale == locales[displayName])
+                if (currentLocale.Substring(0, 3) == locales[displayName].Substring(0, 3))  //allows for en-au == en-us
+                {
                     menuItem.Checked = true;
-                
+                    currentLocale = locales[displayName];  //record the locale that matches the MSDN locale pallet
+                }
             }
-
         }
 
         private void populateLibraryMenu()
@@ -89,6 +109,7 @@ namespace PackageThis
                     libraryToolStripMenuItem_Click);
 
                 menuItem.Name = rootContentItem.libraries[i];
+                menuItem.Text = "&" + menuItem.Text;
                 libraryToolStripMenuItem.DropDownItems.Insert(i, menuItem);
 
                 if (rootContentItem.currentLibrary == i)
@@ -96,12 +117,6 @@ namespace PackageThis
                 else
                     menuItem.Checked = false;
             }
-
-            
-        }
-
-        private void populateTreeView()
-        {
         }
 
         private void TOCTreeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
@@ -128,9 +143,8 @@ namespace PackageThis
             selected.Checked = true;
 
 
-            tocLocale = selected.Name;
+            currentLocale = selected.Name;
             reloadLibrary();
-
         }
 
         private void libraryToolStripMenuItem_Click(object sender, EventArgs e)
@@ -160,36 +174,45 @@ namespace PackageThis
 
         private void reloadLibrary()
         {
-            CleanUpTempDir();
-            CreateTempDir();
+            Cursor.Current = Cursors.WaitCursor;
 
-            statusStrip1.Items.Clear();
-            //statusStrip1.Items.Add(workingDir);
-            statusStrip1.Items.Add(rootContentItem.name);
+            try
+            {
+                CleanUpTempDir();
+                CreateTempDir();
 
-            TOCTreeView.BeginUpdate();
-            TOCTreeView.Nodes.Clear();
+                statusStrip1.Items.Clear();
+                //statusStrip1.Items.Add(workingDir);
+                statusStrip1.Items.Add(rootContentItem.name);
 
-            appController = new AppController(rootContentItem.contentId, tocLocale,
-                rootContentItem.version, TOCTreeView, workingDir);
+                TOCTreeView.BeginUpdate();
+                TOCTreeView.Nodes.Clear();
 
-            TOCTreeView.EndUpdate();
+                appController = new AppController(rootContentItem.contentId, currentLocale,
+                    rootContentItem.version, TOCTreeView, workingDir);
 
-            if (ContentDataSet.Tables["ItemInstance"] != null)
-                ContentDataSet.Tables["ItemInstance"].Clear();
+                TOCTreeView.EndUpdate();
 
-            if (ContentDataSet.Tables["Item"] != null)
-                ContentDataSet.Tables["Item"].Clear();
+                if (ContentDataSet.Tables["ItemInstance"] != null)
+                    ContentDataSet.Tables["ItemInstance"].Clear();
 
-            if (ContentDataSet.Tables["Picture"] != null)
-                ContentDataSet.Tables["Picture"].Clear();
+                if (ContentDataSet.Tables["Item"] != null)
+                    ContentDataSet.Tables["Item"].Clear();
+
+                if (ContentDataSet.Tables["Picture"] != null)
+                    ContentDataSet.Tables["Picture"].Clear();
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
 
         }
 
 
         private void TOCTreeView_BeforeCheck(object sender, TreeViewCancelEventArgs e)
         {
-            string[] split = e.Node.FullPath.Split(new char[] {'\x0098'});
+            //string[] split = e.Node.FullPath.Split(new char[] {'\x0098'});
 
             
             if (e.Node.Checked == false)
@@ -277,22 +300,53 @@ namespace PackageThis
 
         }
 
-        private void toolStripMenuItem2_Click(object sender, EventArgs e)
+        private void exportToChmFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
-            ExportChmForm ecf = new ExportChmForm();
-
-            if (ecf.ShowDialog() != DialogResult.OK)
+            if (ContentDataSet.Tables["Item"].Rows.Count == 0)
                 return;
 
-            appController.CreateChm(ecf.ChmFileTextBox.Text, ecf.TitleTextBox.Text,
-                tocLocale, ContentDataSet);
+            //Test if HH Workshop installed
+            string key = @"HKEY_CURRENT_USER\Software\Microsoft\HTML Help Workshop";
+            string install = (string)Registry.GetValue(key, "InstallDir", null);
+            string hhcExe =  Path.Combine(install, "hhc.exe");
+            if (install == null || File.Exists(hhcExe) == false)
+            {
+                MessageBox.Show("Please install the HTML Help Workshop.",
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
+            
 
+
+            ExportChmForm frm = new ExportChmForm();
+
+            if (frm.ShowDialog() != DialogResult.OK)
+                return;
+
+            appController.CreateChm(frm.ChmFileTextBox.Text, frm.TitleTextBox.Text,
+                currentLocale, ContentDataSet);
                
         }
 
         private void exportToHxsFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (ContentDataSet.Tables["Item"].Rows.Count == 0)
+                return;
+
+            // Test if Help SDK Install - Suck it and see
+            try
+            {
+                HxComp hxsCompiler = new HxComp();
+                hxsCompiler.Initialize();
+                hxsCompiler = null;
+            }
+            catch
+            {
+                MessageBox.Show(@"Please install the VS 2005\2008 SDK, which includes the MS Help 2.x SDK and compiler.",
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                return;
+            }
+
             GenerateHxsForm exportDialog = new GenerateHxsForm();
 
             if (exportDialog.ShowDialog() != DialogResult.OK)
@@ -303,13 +357,121 @@ namespace PackageThis
             appController.CreateHxs(exportDialog.FileTextBox.Text,
                 exportDialog.TitleTextBox.Text,
                 exportDialog.CopyrightComboBox.Text,
-                tocLocale,
+                currentLocale,
                 ContentDataSet);
 
         }
 
+        private void exportToMshcFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (ContentDataSet.Tables["Item"].Rows.Count == 0)
+                return;
+
+            ExportMshcForm frm = new ExportMshcForm();
+
+            if (frm.ShowDialog() != DialogResult.OK)
+                return;
+
+            appController.CreateMshc(frm.MshcFileTextBox.Text,
+                currentLocale, ContentDataSet, frm.VendorName.Text, frm.ProdName.Text, frm.BookName.Text);
+
+        }
+
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AboutBox d = new AboutBox();
+            d.ShowDialog(this);
+        }
+
+        public string AssemblyVersion { get; set; }
+
+        private void toolStripMenuOnlineDocumentation_Click(object sender, EventArgs e)
+        {
+            Process.Start("http://packagethis.codeplex.com/documentation");
+        }
+
+        private void mnuInstallMshcHelpFile_Click(object sender, EventArgs e)
+        {
+            InstallMshcForm frm = new InstallMshcForm();
+            frm.LocaleName.Text = currentLocale;
+
+            if (frm.ShowDialog() != DialogResult.OK)
+                return;
+
+            string HelpLibManagerExe = @"c:\program files\Microsoft Help Viewer\v1.0\HelpLibManager.exe";
+            string arguments = String.Format(@"/product {0} /version {1} /locale {2}", frm.ProdName.Text, frm.VersionName.Text, frm.LocaleName.Text);
+
+            // Install
+
+            if (frm.MshaFileTextBox.Text.Length != 0)
+                arguments = arguments + String.Format(@" /sourceMedia {0}", frm.MshaFileTextBox.Text);
+
+            if (File.Exists(HelpLibManagerExe) == false)
+            {
+                MessageBox.Show("File not found: " +  HelpLibManagerExe);
+                return;
+            }
+
+            Process process = new Process();
+            process.StartInfo.FileName = HelpLibManagerExe;
+            process.StartInfo.Arguments = arguments; 
+            process.StartInfo.UseShellExecute = true;
+            process.StartInfo.Verb = "runas";  //run as administrator -- Required for installation
+            process.Start();
+
+        }
+
+        //eg. Open associated web page http://msdn.microsoft.com/en-us/library/ms533050(v=vs.85).aspx
+        private void gotoWebPage_toolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (TOCTreeView.SelectedNode != null)
+            {
+                MtpsNode mtpsNode = TOCTreeView.SelectedNode.Tag as MtpsNode;
+                String docContentId = appController.GetDocShortId(TOCTreeView.SelectedNode); 
+
+                Process.Start(String.Format("http://msdn.microsoft.com/{0}/library/{1}({2}).aspx",
+                    mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion));
+            }
+        }
+
+        //eg. Open associated mtps page of doc http://services.mtps.microsoft.com/serviceapi/content/ms533050/en-us;vs.85
+        private void gotoMtpsPage_toolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (TOCTreeView.SelectedNode != null)
+            {
+                MtpsNode mtpsNode = TOCTreeView.SelectedNode.Tag as MtpsNode;
+                String docContentId = appController.GetDocShortId(TOCTreeView.SelectedNode);
+
+                Process.Start(String.Format("http://services.mtps.microsoft.com/serviceapi/content/{1}/{0};{2}",
+                    mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion));
+            }
+        }
+
+        private void gotoTocMTPSPageToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (TOCTreeView.SelectedNode != null)
+            {
+                MtpsNode mtpsNode = TOCTreeView.SelectedNode.Tag as MtpsNode;
+                Process.Start(String.Format("http://services.mtps.microsoft.com/serviceapi/content/{1}/{0};{2}",
+                   mtpsNode.navLocale, mtpsNode.targetContentId, mtpsNode.navVersion));
+            }
+        }
 
 
+        private void menuStrip1_MenuActivate(object sender, EventArgs e)
+        {
+            Boolean hasTableItems = ContentDataSet.Tables["Item"].Rows.Count > 0;
+            exportToChmFileToolStripMenuItem.Enabled = hasTableItems;
+            exportToHxsFileToolStripMenuItem.Enabled = hasTableItems;
+            exportToMshcFileToolStripMenuItem.Enabled = hasTableItems;
+        }
+
+        private void menuStrip1_MenuDeactivate(object sender, EventArgs e)
+        {
+            exportToChmFileToolStripMenuItem.Enabled = true;
+            exportToHxsFileToolStripMenuItem.Enabled = true;
+            exportToMshcFileToolStripMenuItem.Enabled = true;
+        }
 
 
     }

@@ -15,6 +15,10 @@ namespace PackageThis
         public ExportChmForm()
         {
             InitializeComponent();
+
+            //show last settings
+            ChmFileTextBox.Text = Gui.GetString("ChmFileTextBox", "");
+            TitleTextBox.Text = Gui.GetString("ChmTitleTextBox", "");
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -35,6 +39,16 @@ namespace PackageThis
 
             }
 
+        }
+
+        private void ExportChmForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.DialogResult == DialogResult.OK)
+            {
+                //Save settings
+                Gui.SetString("ChmFileTextBox", ChmFileTextBox.Text);
+                Gui.SetString("ChmTitleTextBox", TitleTextBox.Text);
+            }
         }
 
 

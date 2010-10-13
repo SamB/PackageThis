@@ -1,3 +1,5 @@
+#define __NODE_DATA_DEBUG
+
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //
 using System;
@@ -9,9 +11,9 @@ using System.Xml;
 using System.IO;
 using System.Web;
 using System.Windows.Forms;
-using System.Xml.Xsl;
 using MSHelpCompiler;
 using ContentServiceLibrary;
+using PackageThis.MtpsFiles;
 
 // Version variables in this code are collection + "." + version, but ContentItem requires a
 // version and collection, eg. version="10", collection="MSDN"
@@ -65,22 +67,13 @@ namespace PackageThis
         private string locale;
         private string version;
         private TreeView tocControl;
+
         private string workingDir;
-
-        private string withinHxsDir;
         private string rawDir;
-        private string hxsDir;
-        private string hxsSubDir = "html";
-
-        public Dictionary<string, string> links = new Dictionary<string, string>();
-
-
-        static private Stream resourceStream = typeof(AppController).Assembly.GetManifestResourceStream(
-            "PackageThis.Extra.hxs.xslt");
-        static private XmlReader transformFile = XmlReader.Create(resourceStream);
-        static private  XslCompiledTransform xform = null;
 
         // static private StreamWriter sw;
+
+        public Dictionary<string, string> links = new Dictionary<string, string>();
 
         public AppController(string topNode, string locale, string version, TreeView tocControl, string workingDir)
         {
@@ -88,18 +81,9 @@ namespace PackageThis
             this.locale = locale;
             this.version = version;
             this.tocControl = tocControl;
+
             this.workingDir = workingDir;
-
             this.rawDir = Path.Combine(workingDir, "raw");
-            this.hxsDir = Path.Combine(workingDir, "hxs");
-            this.withinHxsDir = Path.Combine(hxsDir, hxsSubDir);
-
-
-            if (xform == null)
-            {
-                xform = new XslCompiledTransform(true);
-                xform.Load(transformFile);
-            }
 
             Directory.CreateDirectory(rawDir);
 
@@ -118,6 +102,7 @@ namespace PackageThis
 
             return contentItem;
         }
+        
 
         void processNodeList(ContentItem contentItem, TreeNodeCollection tnCollection)
         {
@@ -142,7 +127,6 @@ namespace PackageThis
 
                 string target = HttpUtility.UrlDecode(GetAttribute(node.Attributes["toc:Target"]));
 
-
                 string targetLocale = GetAttribute(node.Attributes["toc:TargetLocale"]);
                 string targetVersion = GetAttribute(node.Attributes["toc:TargetVersion"]);
 
@@ -163,6 +147,18 @@ namespace PackageThis
                         contentItem.contentId, target, targetLocale, targetVersion, title);
 
                     treeNode.Tag = mtpsNode;
+
+#if (NODE_DATA_DEBUG)
+                    //Is the Asset a GUID?  *-xxxx-xxxx-xxxx-*
+                    string[] split = target.Split(new char[] { '-' });
+                    if (split.Length == 5 && split[1].Length == 4 && split[2].Length == 4 && split[3].Length == 4)
+                    {
+                        treeNode.Text = treeNode.Text + "(GUID)";
+                        treeNode.ForeColor = System.Drawing.Color.Blue;
+                    }
+
+                    treeNode.Text = treeNode.Text + "(" + targetVersion + "/" + targetLocale + ")";
+#endif
 
                     // Mark nodes red that point outside this server
                     if (mtpsNode.external == true)
@@ -256,6 +252,40 @@ namespace PackageThis
         }
 
 
+        public String GetDocShortId(TreeNode node)   //use this when the short id is missing
+        {
+            MtpsNode mtpsNode = node.Tag as MtpsNode;
+
+            // RWC: Inherited this system with some weird bugs. Sometimes a valid node can return a null contentId
+            // Often in these situations the AssetId is Content GUID which can be used to pull down an mtps file and parse for the short id
+
+            string[] split = mtpsNode.targetAssetId.Split(new char[] { '-' });
+            if (split.Length == 5 && split[1].Length == 4 && split[2].Length == 4 && split[3].Length == 4)  //it's a guid format we can look this up
+            {
+                MtpsFile.ReadData(mtpsNode.targetAssetId, mtpsNode.targetVersion, mtpsNode.targetLocale);   //download mtps file and grab shortId
+                if (MtpsFile.shortId != "")
+                    return MtpsFile.shortId;
+            }
+
+            // Try the tradition method
+
+            string[] splitVersion = mtpsNode.targetVersion.Split(new char[] { '.' });
+            ContentItem contentItem = new ContentItem("AssetId:" + mtpsNode.targetAssetId, mtpsNode.targetLocale,
+                splitVersion[1], splitVersion[0], application);
+            try
+            {
+                contentItem.Load(true);
+            }
+            catch
+            {
+            }
+
+            if (contentItem.contentId == null)
+                contentItem.contentId = "";
+            return contentItem.contentId;
+        }
+
+
         public bool WriteContent(TreeNode node, Content contentDataSet)
         {
             DataRow row;
@@ -269,6 +299,14 @@ namespace PackageThis
             try
             {
                 contentItem.Load(true);
+
+                // RWC: This is a HACK -- There are a few pages where the ContentId returns as null even though it's a valid page
+                //
+                if (String.IsNullOrEmpty(contentItem.contentId))  
+                {
+                    contentItem.contentId = GetDocShortId(node);
+                }
+
             }
                 
             catch
@@ -279,6 +317,19 @@ namespace PackageThis
 
             if (contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId) == null)
             {
+                //Issue#14155: Sometimes there can be missing values that cause exceptions. 
+                //Lets's try and bluff our way through
+                if (string.IsNullOrEmpty(contentItem.contentId))  
+                {
+                    node.ForeColor = System.Drawing.Color.Red;   //Set tree node red to flag problem
+                    contentItem.contentId = "PackageThis-" + mtpsNode.targetAssetId;  //Create a repeatable ID using the Asset ID
+                }
+                // If we get no meta/search or wiki data, plug in NOP data because so we can limp along (this usually comes with null contentId above)
+                if (string.IsNullOrEmpty(contentItem.metadata))   
+                    contentItem.metadata = "<se:search xmlns:se=\"urn:mtpg-com:mtps/2004/1/search\" />";
+                if (string.IsNullOrEmpty(contentItem.annotations))
+                    contentItem.annotations = "<an:annotations xmlns:an=\"urn:mtpg-com:mtps/2007/1/annotations\" />";
+
                 row = contentDataSet.Tables["Item"].NewRow();
                 row["ContentId"] = contentItem.contentId;
                 row["Title"] = mtpsNode.title;
@@ -385,213 +436,39 @@ namespace PackageThis
             chm.Create();
 
             ExportProgressForm progressForm = new ExportProgressForm(chm, chm.expectedLines);
-
             progressForm.ShowDialog();
 
         }
+        public void CreateMshc(string MshcFile, string locale, Content contentDataSet, string VendorName, string ProdName, string BookName)
+        {
+            Mshc mshc = new Mshc(workingDir, MshcFile, locale, tocControl.Nodes, contentDataSet, links, VendorName, ProdName, BookName);
 
+            //Mshc.Create();  //progress now calls this.. See Mshc.Compile()
+
+            ExportProgressForm progressForm = new ExportProgressForm(mshc, mshc.expectedLines);
+            progressForm.ShowDialog();
+
+        }
         public void CreateHxs(string hxsFile, string title, string copyright, string locale, 
             Content contentDataSet)
         {
-            if (Directory.Exists(hxsDir) == true)
-            {
-                Directory.Delete(hxsDir, true);
-            }
+            HxS hxs = new HxS(workingDir, hxsFile,
+                title, copyright, locale,
+                tocControl.Nodes,
+                contentDataSet,
+                links);
 
-            Directory.CreateDirectory(hxsDir);
-            Directory.CreateDirectory(withinHxsDir);
+            hxs.Create();
 
-            foreach (string file in Directory.GetFiles(rawDir))
-            {
-                File.Copy(file, Path.Combine(withinHxsDir, Path.GetFileName(file)), true);
-            }
-            
-            // This will be used as a base name for forming all of the MSHelp files.
-            string baseFilename = Path.GetFileNameWithoutExtension(hxsFile);
-
-            foreach (DataRow row in contentDataSet.Tables["Item"].Rows)
-            {
-                if (Int32.Parse(row["Size"].ToString()) != 0)
-                {
-                    Transform(row["ContentId"].ToString(),
-                        row["Metadata"].ToString(),
-                        row["Annotations"].ToString(),
-                        row["VersionId"].ToString(),
-                        contentDataSet);
-                }
-            }
-
-
-            // Create TOC
-            Hxt hxt = new Hxt(Path.Combine(hxsDir, baseFilename + ".hxt"), Encoding.UTF8);
-            CreateHxt(tocControl.Nodes, hxt, contentDataSet);
-            hxt.Close();
-
-            
-            CreateHxks(baseFilename);
-
-            WriteExtraFiles();
-
-            Hxf hxf = new Hxf(Path.Combine(hxsDir, baseFilename + ".hxf"), Encoding.UTF8);
-
-            string[] files = Directory.GetFiles(hxsDir, "*", SearchOption.AllDirectories);
-
-            foreach(string file in files)
-            {
-                hxf.WriteLine(file.Replace(hxsDir, ""));
-            }
-
-            hxf.Close();
-
-            string lcid = new CultureInfo(locale).LCID.ToString();
-            Hxc hxc = new Hxc(baseFilename, title, lcid, "1.0", copyright, hxsDir, Encoding.UTF8);
-
-            int numHtmlFiles = Directory.GetFiles(hxsDir, "*.htm", SearchOption.AllDirectories).Length;
-            int numFiles = Directory.GetFiles(hxsDir, "*", SearchOption.AllDirectories).Length;
-
-            // This gives the number of information lines output by the compiler. It
-            // was determined experimentally, and should give some means of making an
-            // accurate progress bar during a compile.
-            // Actual equation is numInfoLines = 2*numHtmlFiles + (numFiles - numHtmlFiles) + 6
-            // After factoring, we get this equation
-            int expectedLines = numHtmlFiles + numFiles + 6;
-            
-            Hxs hxs = new Hxs(Path.Combine(Path.GetFullPath(hxsDir), baseFilename + ".hxc"),
-                Path.GetFullPath(hxsDir),
-                Path.GetFullPath(hxsFile));
-
-
-            ExportProgressForm hxsProgressForm = new ExportProgressForm(hxs, expectedLines);
-
+            ExportProgressForm hxsProgressForm = new ExportProgressForm(hxs, hxs.expectedLines);
             hxsProgressForm.ShowDialog();
-
-
-        }
-        public void CreateHxt(TreeNodeCollection nodeCollection, Hxt hxt, Content contentDataSet)
-        {
-            bool opened = false; // Keep track of opening or closing of TOC entries in the .hxt
-
-            foreach (TreeNode node in nodeCollection)
-            {
-                if (node.Checked == true)
-                {
-                    MtpsNode mtpsNode = node.Tag as MtpsNode;
-
-                    DataRow row = contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId);
-                    string Url;
-
-                    if (Int32.Parse(row["Size"].ToString()) == 0)
-                        Url = null;
-                    else
-                        Url = Path.Combine(hxsSubDir,
-                            row["ContentId"].ToString() + ".htm");
-                    
-
-                    hxt.WriteStartNode(mtpsNode.title, Url);
-                        
-                    opened = true;
-                }
-                if (node.Nodes.Count != 0 || node.Tag != null)
-                {
-                   CreateHxt(node.Nodes, hxt, contentDataSet);
-                }
-                if (opened)
-                {
-                    opened = false;
-                    hxt.WriteEndNode();
-                }
-            }
-
         }
 
-        void CreateHxks(string baseFileName)
-        {
-            
-            Hxk hxk = new Hxk(baseFileName, "A", hxsDir);
-            hxk = new Hxk(baseFileName, "B", hxsDir);
-            hxk = new Hxk(baseFileName, "F", hxsDir);
-            hxk = new Hxk(baseFileName, "K", hxsDir);
-            hxk = new Hxk(baseFileName, "N", hxsDir);
-            hxk = new Hxk(baseFileName, "S", hxsDir);
-        }
         
-        // Includes stoplist and stylesheet
-        void WriteExtraFiles()
+
+        private void MessageBox()
         {
-            WriteExtraFile("Classic.css");
-
-            // TODO: Locate stop lists for other locales and add them to the project.
-            WriteExtraFile("msdnFTSstop_Unicode.stp");
-
-
-            WriteExtraFile("green-left.jpg");
-            WriteExtraFile("green-middle.jpg");
-            WriteExtraFile("green-right.jpg");
-
-        }
-
-        void WriteExtraFile(string filename)
-        {
-            Stream resourceStream;
-
-            resourceStream = typeof(Program).Assembly.GetManifestResourceStream(
-                "PackageThis.Extra." + filename);
-
-            FileStream fs = new FileStream(Path.Combine(hxsDir, filename),
-                FileMode.Create, FileAccess.Write);
-
-            int b;
-
-            while ((b = resourceStream.ReadByte()) != -1)
-            {
-                fs.WriteByte((byte)b);
-            }
-
-            resourceStream.Close();
-            fs.Close();
-        }
-
-        public void Transform(string contentId, string metadataXml, string annotationsXml,
-            string versionId, Content contentDataSet)
-        {
-            XsltArgumentList arguments = new XsltArgumentList();
-            Link link = new Link(contentDataSet, links);
-            XmlDocument metadata = new XmlDocument();
-            XmlDocument annotations = new XmlDocument();
-
-            string filename = Path.Combine(withinHxsDir, contentId + ".htm");
-            StreamReader sr = new StreamReader(filename);
-
-            string xml = sr.ReadToEnd();
-            sr.Close();
-
-            metadata.LoadXml(metadataXml);
-            annotations.LoadXml(annotationsXml);
-
-            arguments.AddParam("metadata", "", metadata.CreateNavigator());
-            arguments.AddParam("annotations", "", annotations.CreateNavigator());
-            arguments.AddParam("version", "", versionId);
-            arguments.AddParam("locale", "", locale);
-
-            arguments.AddExtensionObject("urn:Link", link);
-
-            TextReader tr = new StringReader(xml);
-            XmlReader xr = XmlReader.Create(tr);
-
-            using (StreamWriter sw = new StreamWriter(filename, false, Encoding.UTF8))
-            {
-                try
-                {
-                    xform.Transform(xr, arguments, sw);
-
-                }
-                catch (Exception ex)
-                {
-                    return;
-                }
-            }
-
-
+            throw new NotImplementedException();
         }
 
 

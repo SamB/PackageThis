@@ -17,6 +17,7 @@ namespace PackageThis
         private SortedList<string, KeywordNode> keywords = new SortedList<string, KeywordNode>();
         private string filename;
         private Encoding encoding;
+        static readonly String crlf = Environment.NewLine;
 
         public Hhk(string filename, string locale)
         {
@@ -63,12 +64,12 @@ namespace PackageThis
         {
             StreamWriter writer = new StreamWriter(filename, false, encoding);
 
-            writer.WriteLine("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML//EN\"/>\n" +
-                "<HTML>\n" + 
-                "<!-- Sitemap 1.0 -->\n" +
-                "<HEAD><META HTTP-EQUIV=\"Content Type\" CONTENT=\"text/html; CHARSET={0}\">\n" +
-                "</HEAD><BODY>\n" +
-                "<OBJECT type=\"text/site properties\">\n" +
+            writer.WriteLine("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML//EN\"/>" + crlf +
+                "<HTML>" + crlf +
+                "<!-- Sitemap 1.0 -->" + crlf +
+                "<HEAD><META HTTP-EQUIV=\"Content Type\" CONTENT=\"text/html; CHARSET={0}\">" + crlf +
+                "</HEAD><BODY>" + crlf +
+                "<OBJECT type=\"text/site properties\">" + crlf +
                 "</OBJECT>", encoding.WebName);
 
             SaveNodes(writer, keywords);

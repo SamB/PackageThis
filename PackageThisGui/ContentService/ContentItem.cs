@@ -12,7 +12,6 @@ using PackageThis.com.microsoft.msdn.services;
 namespace ContentServiceLibrary
 {
         
-        
         static public class rootContentItem
         {
 
@@ -64,7 +63,7 @@ namespace ContentServiceLibrary
         public string application;
 
         public string contentIdentifier;
-        string aKeyword;
+        //string aKeyword;
         string locale;
         string version;
         string collection;
@@ -106,6 +105,12 @@ namespace ContentServiceLibrary
                 }
             }
         }
+
+
+        //Echo these back out for convenience
+        public String Locale { get { return this.locale; } }
+        public String Product { get { return this.collection + "." + this.version; } }
+
 
         public void Load(bool loadImages)
         {
@@ -180,6 +185,7 @@ namespace ContentServiceLibrary
                 throw (new BadContentIdException("ContentId contains illegal characters: [" + contentId + "]"));
             }
             
+
             numImages = response.imageDocuments.Length;
             
 

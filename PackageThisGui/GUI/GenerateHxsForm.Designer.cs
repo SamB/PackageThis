@@ -46,7 +46,7 @@ namespace PackageThis
             // 
             this.OK.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.OK.Enabled = false;
-            this.OK.Location = new System.Drawing.Point(183, 85);
+            this.OK.Location = new System.Drawing.Point(299, 102);
             this.OK.Name = "OK";
             this.OK.Size = new System.Drawing.Size(75, 23);
             this.OK.TabIndex = 6;
@@ -56,7 +56,7 @@ namespace PackageThis
             // Cancel
             // 
             this.Cancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.Cancel.Location = new System.Drawing.Point(291, 85);
+            this.Cancel.Location = new System.Drawing.Point(380, 102);
             this.Cancel.Name = "Cancel";
             this.Cancel.Size = new System.Drawing.Size(75, 23);
             this.Cancel.TabIndex = 0;
@@ -66,7 +66,7 @@ namespace PackageThis
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 9);
+            this.label1.Location = new System.Drawing.Point(12, 17);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(47, 13);
             this.label1.TabIndex = 2;
@@ -74,7 +74,7 @@ namespace PackageThis
             // 
             // Browse
             // 
-            this.Browse.Location = new System.Drawing.Point(461, 4);
+            this.Browse.Location = new System.Drawing.Point(461, 12);
             this.Browse.Name = "Browse";
             this.Browse.Size = new System.Drawing.Size(75, 23);
             this.Browse.TabIndex = 3;
@@ -84,7 +84,7 @@ namespace PackageThis
             // 
             // FileTextBox
             // 
-            this.FileTextBox.Location = new System.Drawing.Point(65, 6);
+            this.FileTextBox.Location = new System.Drawing.Point(65, 14);
             this.FileTextBox.Name = "FileTextBox";
             this.FileTextBox.ReadOnly = true;
             this.FileTextBox.Size = new System.Drawing.Size(390, 20);
@@ -94,7 +94,7 @@ namespace PackageThis
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(29, 35);
+            this.label2.Location = new System.Drawing.Point(29, 43);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(30, 13);
             this.label2.TabIndex = 5;
@@ -102,7 +102,7 @@ namespace PackageThis
             // 
             // TitleTextBox
             // 
-            this.TitleTextBox.Location = new System.Drawing.Point(65, 32);
+            this.TitleTextBox.Location = new System.Drawing.Point(65, 40);
             this.TitleTextBox.Name = "TitleTextBox";
             this.TitleTextBox.Size = new System.Drawing.Size(390, 20);
             this.TitleTextBox.TabIndex = 1;
@@ -111,7 +111,7 @@ namespace PackageThis
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(5, 61);
+            this.label3.Location = new System.Drawing.Point(5, 69);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(54, 13);
             this.label3.TabIndex = 7;
@@ -120,7 +120,7 @@ namespace PackageThis
             // CopyrightComboBox
             // 
             this.CopyrightComboBox.FormattingEnabled = true;
-            this.CopyrightComboBox.Location = new System.Drawing.Point(65, 58);
+            this.CopyrightComboBox.Location = new System.Drawing.Point(65, 66);
             this.CopyrightComboBox.Name = "CopyrightComboBox";
             this.CopyrightComboBox.Size = new System.Drawing.Size(390, 21);
             this.CopyrightComboBox.TabIndex = 2;
@@ -137,7 +137,7 @@ namespace PackageThis
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.Cancel;
-            this.ClientSize = new System.Drawing.Size(548, 118);
+            this.ClientSize = new System.Drawing.Size(548, 137);
             this.Controls.Add(this.CopyrightComboBox);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.TitleTextBox);
@@ -154,6 +154,7 @@ namespace PackageThis
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Export to Hxs File";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GenerateHxsForm_FormClosing);
             this.Load += new System.EventHandler(this.GenerateHxsForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

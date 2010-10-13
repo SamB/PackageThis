@@ -29,9 +29,9 @@ namespace PackageThis
             try
             {
 
+                XmlWriterSettings settings = new XmlWriterSettings { Indent = true, NewLineChars = Environment.NewLine, Encoding = encoding };
+                XmlWriter writer = XmlWriter.Create(Path.Combine(outputDirectory, name+".hxc"), settings);
 
-                System.Xml.XmlTextWriter writer = new System.Xml.XmlTextWriter(Path.Combine(outputDirectory, name+".hxc"), null);
-                writer.Formatting = Formatting.Indented;
                 writer.WriteStartDocument();
                 writer.WriteDocType("HelpCollection", null, "MS-Help://Hx/Resources/HelpCollection.dtd", null);
 

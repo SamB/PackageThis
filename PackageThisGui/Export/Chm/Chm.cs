@@ -35,49 +35,53 @@ namespace PackageThis
 
         private IProgressReporter progressReporter = null;
 
-        public int expectedLines = 0;
+        public int expectedLines;
 
         // {0} = filename with full path (c:\file.chm)
         // {1} = filename without extension
         // {2} = LCID
         // {3} = default page
         // {4} = title
-        static string template = "[OPTIONS]\n" +
-            "Auto Index=Yes\n" +
-            "Compatibility=1.1 or later\n" +
-            "Compiled file={0}\n" +
-            "Contents file={1}.hhc\n" +
-            "Create CHI file=No\n" +
-            "Default Window=msdn\n" +
-            "Default topic={3}\n" +
-            "Display compile progress=Yes\n" +
-            "Enhanced decompilation=Yes\n" +
-            "Error log file={1}.log\n" +
-            "Full-text search=Yes\n" +
-            "Index file={1}.hhk\n" +
-            "Language=0x{2:x}\n" + // in hex, eg. 0x0409
-            "Title={4}\n\n" +
+        static readonly String crlf = Environment.NewLine;
+        static string template = "[OPTIONS]" + crlf +
+            "Auto Index=Yes" + crlf +
+            "Compatibility=1.1 or later" + crlf +
+            "Compiled file={0}" + crlf +
+            "Contents file={1}.hhc" + crlf +
+            "Create CHI file=No" + crlf +
+            "Default Window=msdn" + crlf +
+            "Default topic={3}" + crlf +
+            "Display compile progress=Yes" + crlf +
+            "Enhanced decompilation=Yes" + crlf +
+            "Error log file={1}.log" + crlf +
+            "Full-text search=Yes" + crlf +
+            "Index file={1}.hhk" + crlf +
+            "Language=0x{2:x}" + crlf + // in hex, eg. 0x0409
+            "Title={4}" + crlf +
+            "Binary TOC=Yes" + crlf +   // this enables MSDN style Next\Prev button (although stops merging if anyone wants to do that later)
+            "Binary Index=Yes" + crlf + crlf +
 
-            "[WINDOWS]\n" +
-            "msdn=\"{4}\",\"{1}.hhc\",\"{1}.hhk\",\"{3}\",\"{3}\",,\"MSDN Library\",,\"MSDN Online\",0x73520,240,0x60387e,[30,30,770,540],0x30000,,,,,,0\n\n" +
+            "[WINDOWS]" + crlf +
+            "msdn=\"{4}\",\"{1}.hhc\",\"{1}.hhk\",\"{3}\",\"{3}\",,\"MSDN Library\",,\"MSDN Online\",0x73520,240,0x60387e,[30,30,770,540],0x30000,,,,,,0" + crlf + crlf +
 
-            "[FILES]\n" +
-            "green-left.jpg\n" +
-            "green-middle.jpg\n" +
-            "green-right.jpg\n\n" +
-
-
-            "[INFOTYPES]\n";
+            "[FILES]" + crlf +
+            "green-left.jpg" + crlf +
+            "green-middle.jpg" + crlf +
+            "green-right.jpg" + crlf + crlf +
 
 
-        static private Stream resourceStream = typeof(AppController).Assembly.GetManifestResourceStream(
-            "PackageThis.Extra.chm.xslt");
+            "[INFOTYPES]" + crlf;
+
+
+        static private Stream resourceStream = typeof(AppController).Assembly.GetManifestResourceStream("PackageThis.Extra.chm.xslt");
         static private XmlReader transformFile = XmlReader.Create(resourceStream);
         static private XslCompiledTransform xform = null;
 
 
-        public Chm(string workingDir, string title, string chmFile, string locale, TreeNodeCollection nodes,
-            Content contentDataSet, Dictionary<string, string> links)
+        public Chm(string workingDir, string title, string chmFile, string locale, 
+            TreeNodeCollection nodes,
+            Content contentDataSet, 
+            Dictionary<string, string> links)
         {
             this.workingDir = workingDir;
             this.title = title;
@@ -88,9 +92,11 @@ namespace PackageThis
             this.links = links;
 
             this.rawDir = Path.Combine(workingDir, "raw");
-            this.chmDir = Path.Combine(workingDir, "chm");
-            this.withinChmDir = Path.Combine(chmDir, chmSubDir);
 
+            // The source shouldn't be hidden away. If an error happens (likely) the user needs to check logs etc.
+            //this.chmDir = Path.Combine(workingDir, "chm");   
+            this.chmDir = GetUniqueDir(chmFile);
+            this.withinChmDir = Path.Combine(chmDir, chmSubDir);
             this.baseName = Path.GetFileNameWithoutExtension(chmFile);
 
             if (xform == null)
@@ -99,7 +105,20 @@ namespace PackageThis
                 xform.Load(transformFile);
             }
 
+        }
 
+        private string GetUniqueDir(string targetFile)
+        {
+            string basedir = Path.ChangeExtension(targetFile, "ProjectSource");
+            string dir = basedir;
+            int x = 0;
+            while (Directory.Exists(dir))
+            {
+                x++;
+                string num = x.ToString();
+                dir = basedir + "." + num.PadLeft(3, '0');
+            }
+            return dir;   //return a folder that does not exist
         }
 
 
@@ -122,12 +141,14 @@ namespace PackageThis
 
             foreach (DataRow row in contentDataSet.Tables["Item"].Rows)
             {
-                if (Int32.Parse(row["Size"].ToString()) != 0)
-                {
+                //RWC: Now include phantom nodes
+                //if (Int32.Parse(row["Size"].ToString()) != 0)
+                //{
                     Transform(row["ContentId"].ToString(),
                         row["Metadata"].ToString(),
                         row["Annotations"].ToString(),
                         row["VersionId"].ToString(), 
+                        row["Title"].ToString(),
                         contentDataSet);
 
                     XmlDocument document = new XmlDocument();
@@ -146,7 +167,7 @@ namespace PackageThis
                             Path.Combine(chmSubDir, row["ContentId"].ToString() + ".htm"), 
                             row["Title"].ToString());
                     }
-                }
+                //}
             }
 
             hhk.Save();
@@ -177,7 +198,11 @@ namespace PackageThis
 
         }
 
-        public void Compile(IProgressReporter progressReporter)
+
+
+        // Compile() is called by a background Thread in ProgressForm so be carful
+
+        void ICompilable.Compile(IProgressReporter progressReporter) 
         {
             this.progressReporter = progressReporter;
 
@@ -185,20 +210,19 @@ namespace PackageThis
             string key = @"HKEY_CURRENT_USER\Software\Microsoft\HTML Help Workshop";
 
             string install = (string)Registry.GetValue(key, "InstallDir", null);
+            string hhcExe =  Path.Combine(install, "hhc.exe");
 
-            if (install == null)
+            if (install == null || File.Exists(hhcExe) == false)
             {
-                // TODO: throw this instead to decouple from winforms.
-                MessageBox.Show("You need to install the HTML Help Workshop.");
-                return;
+                throw (new Exception("Please install the HTML Help Workshop."));
             }
             
-            
+           
             
             Process compileProcess = new Process();
 
-            compileProcess.StartInfo.FileName = Path.Combine(install, "hhc.exe");
-            compileProcess.StartInfo.Arguments = baseName + ".hhp";
+            compileProcess.StartInfo.FileName = "\"" + Path.Combine(install, "hhc.exe") + "\"";
+            compileProcess.StartInfo.Arguments = "\"" + baseName + ".hhp" + "\"";                  //Fix: Wrap in quotes 
             compileProcess.StartInfo.CreateNoWindow = true;
             compileProcess.StartInfo.WorkingDirectory = chmDir;
             compileProcess.StartInfo.UseShellExecute = false;
@@ -246,10 +270,11 @@ namespace PackageThis
                     DataRow row = contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId);
                     string Url;
 
-                    if (Int32.Parse(row["Size"].ToString()) == 0)
-                        Url = null;
-                    else
-                    {
+                    //RWC: Now include phantom pages
+                    //if (Int32.Parse(row["Size"].ToString()) == 0)
+                    //    Url = null;
+                    //else
+                    //{
                         Url = Path.Combine(chmSubDir,
                             row["ContentId"].ToString() + ".htm");
                         
@@ -257,7 +282,7 @@ namespace PackageThis
                         // by the chm.
                         if(defaultPage == null)
                             defaultPage = Url;
-                    }
+                    //}
 
 
                     hhc.WriteStartNode(mtpsNode.title, Url);
@@ -278,7 +303,7 @@ namespace PackageThis
         }
 
         public void Transform(string contentId, string metadataXml, string annotationsXml,
-            string versionId, Content contentDataSet)
+            string versionId, string docTitle, Content contentDataSet)
         {
             XsltArgumentList arguments = new XsltArgumentList();
             Link link = new Link(contentDataSet, links);
@@ -286,7 +311,26 @@ namespace PackageThis
             XmlDocument annotations = new XmlDocument();
 
             string filename = Path.Combine(withinChmDir, contentId + ".htm");
-            StreamReader sr = new StreamReader(filename);
+
+            string xml;
+            if (File.Exists(filename))
+            {
+                StreamReader sr = new StreamReader(filename);
+                xml = sr.ReadToEnd();
+                sr.Close();
+            }
+            else  //Probably a node file that simply lists its children -- We will deal with this at a later date
+            {
+                xml = "<div class=\"topic\" xmlns=\"http://www.w3.org/1999/xhtml\">" + Environment.NewLine +
+                      "  <div class=\"majorTitle\">" + docTitle + "</div>" + Environment.NewLine +
+                      "  <div class=\"title\">" + docTitle + "</div>" + Environment.NewLine +
+                      "  <div id=\"mainSection\">" + Environment.NewLine +
+                      "    <div id=\"mainBody\">" + Environment.NewLine +
+                      "      <p></p>" + Environment.NewLine +                //RWC: Too difficult to add child link list like MSDN Online. Just leave blank.
+                      "    </div>" + Environment.NewLine +
+                      "  </div>" + Environment.NewLine +
+                      "</div>" + Environment.NewLine;
+            }
 
             int codePage = new CultureInfo(locale).TextInfo.ANSICodePage;
 
@@ -295,11 +339,6 @@ namespace PackageThis
             Encoding encoding = Encoding.GetEncoding(codePage,
                 new EncoderReplacementFallback(" "),
                 new DecoderReplacementFallback(" "));
-
-
-            string xml = sr.ReadToEnd();
-            sr.Close();
-
 
 
             metadata.LoadXml(metadataXml);

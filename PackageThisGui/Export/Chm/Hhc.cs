@@ -16,6 +16,7 @@ namespace PackageThis
     {
         private bool Disposed;
         private StreamWriter writer;
+        static readonly String crlf = Environment.NewLine;
 
         // Constructor
         public Hhc(string filePath, string locale)
@@ -27,12 +28,12 @@ namespace PackageThis
             Disposed = false;
 
             writer = new StreamWriter(filePath, false, encoding);
-            writer.WriteLine("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML//EN\"/>\n" +
-                "<HTML>\n" +
-                "<HEAD>\n" +
-                "<META HTTP-EQUIV=\"Content Type\" CONTENT=\"text/html; CHARSET={0}\">\n" + 
-                "<meta name=\"GENERATOR\" content=\"Package This\" />\n" +
-                "<!-- Sitemap 1.0 -->\n" +
+            writer.WriteLine("<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML//EN\"/>" + crlf +
+                "<HTML>" + crlf +
+                "<HEAD>" + crlf +
+                "<META HTTP-EQUIV=\"Content Type\" CONTENT=\"text/html; CHARSET={0}\">" + crlf +
+                "<meta name=\"GENERATOR\" content=\"Package This\" />" + crlf +
+                "<!-- Sitemap 1.0 -->" + crlf +
                 "</HEAD><BODY>", encoding.WebName);
 
 /*
@@ -74,7 +75,7 @@ namespace PackageThis
         {
             title = HttpUtility.HtmlEncode(title);
             url = HttpUtility.HtmlEncode(url);
-            writer.WriteLine("<UL>\n" +
+            writer.WriteLine("<UL>" + crlf +
                 "<LI><OBJECT type=\"text/sitemap\"/>");
                 
             

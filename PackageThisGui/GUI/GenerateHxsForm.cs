@@ -33,6 +33,10 @@ namespace PackageThis
 
             CopyrightComboBox.SelectedItem = CopyrightComboBox.Items[1];
 
+            //show last settings
+            FileTextBox.Text = Gui.GetString("HxSFileTextBox", "");
+            TitleTextBox.Text = Gui.GetString("HxSTitleTextBox", "");
+            CopyrightComboBox.Text = Gui.GetString("HxSCopyright", CopyrightComboBox.Text);
         }
 
         private void Browse_Click(object sender, EventArgs e)
@@ -56,6 +60,17 @@ namespace PackageThis
                 OK.Enabled = true;
             else
                 OK.Enabled = false;
+
+        }
+
+        private void GenerateHxsForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (this.DialogResult == DialogResult.OK)
+            {
+                Gui.SetString("HxSFileTextBox", FileTextBox.Text);
+                Gui.SetString("HxSTitleTextBox", TitleTextBox.Text);
+                Gui.SetString("HxSCopyright", CopyrightComboBox.Text);
+            }
 
         }
     }

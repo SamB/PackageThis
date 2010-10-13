@@ -36,7 +36,11 @@ namespace PackageThis
             {
                 using (StreamWriter writer = new StreamWriter(Path.Combine(outputDirectory, name + indexName + ".hxk")))
                 {
-                    writer.Write(string.Format("<?xml version=\"1.0\" encoding=\"utf-8\"?><!DOCTYPE HelpIndex SYSTEM \"MS-Help://Hx/Resources/HelpIndex.dtd\"><HelpIndex Name=\"{0}\" DTDVersion=\"1.0\" />", indexName));
+                    writer.NewLine = Environment.NewLine;
+                    writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                    writer.WriteLine("<!DOCTYPE HelpIndex SYSTEM \"MS-Help://Hx/Resources/HelpIndex.dtd\">");
+                    writer.WriteLine(String.Format("<HelpIndex Name=\"{0}\" DTDVersion=\"1.0\" />", indexName));
+
                     writer.Flush();
                     writer.Close();
                 }

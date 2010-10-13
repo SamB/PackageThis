@@ -43,7 +43,7 @@ namespace PackageThis
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 9);
+            this.label1.Location = new System.Drawing.Point(12, 16);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(50, 13);
             this.label1.TabIndex = 0;
@@ -52,7 +52,7 @@ namespace PackageThis
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(32, 39);
+            this.label2.Location = new System.Drawing.Point(32, 46);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(30, 13);
             this.label2.TabIndex = 1;
@@ -60,7 +60,7 @@ namespace PackageThis
             // 
             // ChmFileTextBox
             // 
-            this.ChmFileTextBox.Location = new System.Drawing.Point(68, 6);
+            this.ChmFileTextBox.Location = new System.Drawing.Point(68, 13);
             this.ChmFileTextBox.Name = "ChmFileTextBox";
             this.ChmFileTextBox.ReadOnly = true;
             this.ChmFileTextBox.Size = new System.Drawing.Size(387, 20);
@@ -69,7 +69,7 @@ namespace PackageThis
             // 
             // TitleTextBox
             // 
-            this.TitleTextBox.Location = new System.Drawing.Point(68, 36);
+            this.TitleTextBox.Location = new System.Drawing.Point(68, 43);
             this.TitleTextBox.Name = "TitleTextBox";
             this.TitleTextBox.Size = new System.Drawing.Size(387, 20);
             this.TitleTextBox.TabIndex = 2;
@@ -77,7 +77,7 @@ namespace PackageThis
             // 
             // BrowseBtn
             // 
-            this.BrowseBtn.Location = new System.Drawing.Point(461, 4);
+            this.BrowseBtn.Location = new System.Drawing.Point(461, 11);
             this.BrowseBtn.Name = "BrowseBtn";
             this.BrowseBtn.Size = new System.Drawing.Size(75, 23);
             this.BrowseBtn.TabIndex = 1;
@@ -89,7 +89,7 @@ namespace PackageThis
             // 
             this.OKBtn.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.OKBtn.Enabled = false;
-            this.OKBtn.Location = new System.Drawing.Point(183, 62);
+            this.OKBtn.Location = new System.Drawing.Point(299, 80);
             this.OKBtn.Name = "OKBtn";
             this.OKBtn.Size = new System.Drawing.Size(75, 23);
             this.OKBtn.TabIndex = 3;
@@ -99,7 +99,7 @@ namespace PackageThis
             // CancelBtn
             // 
             this.CancelBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.CancelBtn.Location = new System.Drawing.Point(291, 62);
+            this.CancelBtn.Location = new System.Drawing.Point(380, 80);
             this.CancelBtn.Name = "CancelBtn";
             this.CancelBtn.Size = new System.Drawing.Size(75, 23);
             this.CancelBtn.TabIndex = 4;
@@ -117,7 +117,7 @@ namespace PackageThis
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.CancelBtn;
-            this.ClientSize = new System.Drawing.Size(548, 93);
+            this.ClientSize = new System.Drawing.Size(548, 115);
             this.Controls.Add(this.CancelBtn);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.BrowseBtn);
@@ -131,7 +131,8 @@ namespace PackageThis
             this.Name = "ExportChmForm";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Export to Chm";
+            this.Text = "Export to Chm File";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ExportChmForm_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

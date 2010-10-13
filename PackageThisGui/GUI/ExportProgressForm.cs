@@ -46,18 +46,34 @@ namespace PackageThis
 
         private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            progressBar1.Value = e.ProgressPercentage;
-            label1.Text = e.UserState as string;
+            string message = e.UserState as string;
+
+            if (message != "" && message[0] == '!')          // Leading ! = reset progress bar
+            {
+                lines = 0;
+                progressBar1.Value = 0;
+                if (message.Length > 1)
+                    label1.Text = message.Substring(1);      //skip ! leading char
+            }
+            else
+            {
+                progressBar1.Value = e.ProgressPercentage;
+                if (message != "*")                          // * = advances progress only
+                    label1.Text = message;
+            }
         }
 
         void IProgressReporter.ProgressMessage(string message)
         {
-            int percent = (lines++ * 100) / expectedLines;
-            
-            if (percent > 100)
-                percent = 100;
+            if (expectedLines > 0)
+            {
+                int percent = (lines++ * 100) / expectedLines;
 
-            backgroundWorker1.ReportProgress(percent, message);
+                if (percent > 100)
+                    percent = 100;
+
+                backgroundWorker1.ReportProgress(percent, message);
+            }
         }
 
         // http://blogs.msdn.com/greggm/archive/2005/11/18/494648.aspx
