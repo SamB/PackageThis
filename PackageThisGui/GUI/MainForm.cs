@@ -121,7 +121,15 @@ namespace PackageThis
 
         private void TOCTreeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
         {
-            appController.ExpandNode(e.Node);
+            Cursor.Current = Cursors.WaitCursor;
+            try
+            {
+                appController.ExpandNode(e.Node);
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
         }
 
         private void localeToolStripMenuItem_Click(object sender, EventArgs e)
@@ -217,8 +225,16 @@ namespace PackageThis
             
             if (e.Node.Checked == false)
             {
-                if(appController.WriteContent(e.Node, ContentDataSet) == false)
-                    e.Cancel = true ;                
+                Cursor.Current = Cursors.WaitCursor;
+                try
+                {
+                    if (appController.WriteContent(e.Node, ContentDataSet) == false)
+                        e.Cancel = true;
+                }
+                finally
+                {
+                    Cursor.Current = Cursors.Default;
+                }
             }
             else
             {
@@ -293,7 +309,7 @@ namespace PackageThis
 
         private void CreateTempDir()
         {
-            tempPath = Path.GetTempPath();
+            tempPath = Path.Combine(Path.GetTempPath(), "PackageThis");  // <-- If we are not going to cleanup properly then lets atleast group under this folder 
             tempDir = Path.GetRandomFileName();
             workingDir = Path.Combine(tempPath, tempDir) + "\\";
             Directory.CreateDirectory(workingDir);
@@ -471,6 +487,11 @@ namespace PackageThis
             exportToChmFileToolStripMenuItem.Enabled = true;
             exportToHxsFileToolStripMenuItem.Enabled = true;
             exportToMshcFileToolStripMenuItem.Enabled = true;
+        }
+
+        private void toolStripMenuOpenWorkDir_Click(object sender, EventArgs e)
+        {
+            Process.Start(workingDir);
         }
 
 

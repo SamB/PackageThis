@@ -92,6 +92,8 @@ namespace PackageThis
             this.ContentDataSet = new PackageThis.Content();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripMenuOpenWorkDir = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -137,6 +139,8 @@ namespace PackageThis
             this.toolStripSeparator7,
             this.exportToMshcFileToolStripMenuItem,
             this.mnuHelpLibManager,
+            this.toolStripSeparator9,
+            this.toolStripMenuOpenWorkDir,
             this.toolStripSeparator6,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
@@ -634,6 +638,18 @@ namespace PackageThis
             this.saveFileDialog1.DefaultExt = "xml";
             this.saveFileDialog1.Filter = "XML files|*.xml";
             // 
+            // toolStripSeparator9
+            // 
+            this.toolStripSeparator9.Name = "toolStripSeparator9";
+            this.toolStripSeparator9.Size = new System.Drawing.Size(200, 6);
+            // 
+            // toolStripMenuOpenWorkDir
+            // 
+            this.toolStripMenuOpenWorkDir.Name = "toolStripMenuOpenWorkDir";
+            this.toolStripMenuOpenWorkDir.Size = new System.Drawing.Size(203, 22);
+            this.toolStripMenuOpenWorkDir.Text = "Open Work Directory";
+            this.toolStripMenuOpenWorkDir.Click += new System.EventHandler(this.toolStripMenuOpenWorkDir_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -726,6 +742,8 @@ namespace PackageThis
         private System.Windows.Forms.ToolStripMenuItem gotoWebPage_toolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem gotoMtpsPage_toolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showTocMTPSPageToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuOpenWorkDir;
         
     }
 }
