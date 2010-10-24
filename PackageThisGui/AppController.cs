@@ -324,7 +324,7 @@ namespace PackageThis
                     node.ForeColor = System.Drawing.Color.Red;   //Set tree node red to flag problem
                     contentItem.contentId = "PackageThis-" + mtpsNode.targetAssetId;  //Create a repeatable ID using the Asset ID
                 }
-                // If we get no meta/search or wiki data, plug in NOP data because so we can limp along (this usually comes with null contentId above)
+                // If we get no meta/search or wiki data, plug in NOP data so we can limp along (this usually comes with null contentId above)
                 if (string.IsNullOrEmpty(contentItem.metadata))   
                     contentItem.metadata = "<se:search xmlns:se=\"urn:mtpg-com:mtps/2004/1/search\" />";
                 if (string.IsNullOrEmpty(contentItem.annotations))
@@ -392,12 +392,14 @@ namespace PackageThis
 
                 }
             }
+ 
             contentItem.Write(rawDir);
 
             return true;
 
             
         }
+
 
         public void RemoveContent(TreeNode node, Content contentDataSet)
         {

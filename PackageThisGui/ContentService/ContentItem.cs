@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web.Services;
 using PackageThis.com.microsoft.msdn.services;
+using System.Xml;
 
 namespace ContentServiceLibrary
 {
@@ -334,40 +335,126 @@ namespace ContentServiceLibrary
 
         public void Write(string directory, string filename)
         {
-            if (xml != null)
+            if (xml == null)
+                return;
+
+            //Save image files
+
+            int i = -1;
+            String[] imageFiles = new String[images.Count];
+
+            foreach (Image image in images)
             {
-                using (StreamWriter sw = new StreamWriter(Path.Combine(directory, filename)))
-                {
-                    sw.Write(xml);
+                i++;
+                if (image.data == null)
+                    continue;
 
+                imageFiles[i] = GetImageFilename(image);
+                using (BinaryWriter bw = new BinaryWriter(File.Open(Path.Combine(directory, imageFiles[i]), FileMode.Create)))
+                {
+                    bw.Write(image.data, 0, image.data.Length);
                 }
 
-                foreach (Image image in images)
-                {
-
-                    if (image.data == null)
-                        continue;
-
-                    string imageFilename = GetImageFilename(image);
-
-                    using (BinaryWriter bw = new BinaryWriter(File.Open(Path.Combine(directory, imageFilename),
-                        FileMode.Create)))
-                    {
-
-                        bw.Write(image.data, 0, image.data.Length);
-                    }
-
-                }
             }
 
+            //Adjust Image Links in topic xml
+            if (images.Count != 0)
+                xml = FixImageLinks.XmlFixLinks(xml, imageFiles);
+
+            //Save HTML file
+
+            using (StreamWriter sw = new StreamWriter(Path.Combine(directory, filename)))
+            {
+                sw.Write(xml);
+            }
         }
 
         private string GetImageFilename(Image image)
         {
             return contentId + "." + image.name + "(" + locale +
                  "," + collection + "." + version + ")." + image.imageFormat;
-
         }
+
+
+    }
+
+
+
+    public static class FixImageLinks
+    {
+        public static String XmlFixLinks(string xml, string[] imageFiles)
+        {
+            XmlDocument xmldoc = new XmlDocument();
+            xmldoc.LoadXml(xml);
+            XmlNodeList imgNodes = xmldoc.GetElementsByTagName("img");    //get all <img> nodes
+
+            foreach (XmlNode node in imgNodes)
+            {
+                if (node == null || node.Name != "img" || node.Attributes.Count < 2)
+                    continue;
+
+                String srcValue = node.Attributes["src"].Value;
+                String filename = FindFullFilename(srcValue, imageFiles);
+
+                // Src= link already set correctly?
+
+                if (String.IsNullOrEmpty(srcValue) == false && srcValue == filename)
+                    continue;
+
+                // Found a better match?
+
+                if (filename.Length != 0)
+                {
+                    node.Attributes["src"].Value = srcValue;
+                    continue;
+                }
+
+                // Need to look in the preceeding comment <!-- .. ImageName="bingo" .. -->
+
+                XmlNode lastNode = node.PreviousSibling;
+                if (lastNode != null && lastNode.NodeType == XmlNodeType.Comment)
+                {
+                    String imageName = ExtractImageNameFromComment(lastNode.Value);  // pass full comment //<!-- .. ImageName="bingo" .. -->
+                    filename = FindFullFilename(imageName, imageFiles);
+                    if (filename.Length != 0)
+                    {
+                        node.Attributes["src"].Value = filename;    //found a filename
+                        continue;
+                    }
+                }
+
+                // No match? Use first img in list -- Changes are it's the right one!
+
+                //node.Attributes["src"].Value = imageFiles[0];
+            }
+
+            return xmldoc.OuterXml;
+        }
+
+
+        private static String FindFullFilename(String nameFragment, string[] imageFiles)
+        {
+            if (nameFragment.Length != 0)
+                foreach (String iname in imageFiles)
+                    if (iname != null && iname.IndexOf(nameFragment) >= 0)
+                        return iname;
+            return "";
+        }
+
+        private static String ExtractImageNameFromComment(String sComment)
+        {
+            const string attrName = "ImageName=\"";
+            int p1 = sComment.IndexOf(attrName);
+            if (p1 >= 0)
+            {
+                p1 = p1 + attrName.Length;      //first char after opening "
+                int p2 = sComment.IndexOf('"', p1);    //closing "
+                if (p2 > p1)
+                    return sComment.Substring(p1, p2 - p1);
+            }
+            return "";
+        }
+
     }
 
     public class BadContentIdException : ApplicationException

@@ -202,12 +202,16 @@ namespace PackageThis
                     if (tocParent == "-1")
                         tocParent = PackageThisRootID;
 
-                    if (DownloadOfflineFileAndSave(
+                    if (DownloadMtps.DownloadOfflineFileAndSave(
                         row["ContentId"].ToString(),
                         row["AssetId"].ToString(),
                         row["VersionId"].ToString(),
                         tocParent,
-                        n.ToString()))                         // toc order
+                        n.ToString(),
+                        this.rawDir,
+                        this.locale,
+                        this.packageName
+                        ))                         // toc order
                     {
                            //Downloaded and saved successfully!
                     }
@@ -418,359 +422,6 @@ namespace PackageThis
             
         }
 
-        private String ValidateImgFilename(String link, String contentId, int valLevel)
-        {
-            if (link.Length != 0)
-            {
-                string[] files;
-                String linkNoExt;
-
-                if (valLevel == 1)  //look for exact match
-                {
-                    files = System.IO.Directory.GetFiles(rawDir, link);
-                    if (files.Length > 0)
-                        return Path.GetFileName(files[0]);   //file found
-                }
-
-                if (valLevel == 2)  //look contentId.link?????.??? match
-                {
-                    linkNoExt = Path.GetFileNameWithoutExtension(link);
-                    files = System.IO.Directory.GetFiles(rawDir, contentId + "." + linkNoExt + "*");
-                    if (files.Length > 0)
-                        return Path.GetFileName(files[0]);   //file found
-                }
-
-                if (valLevel == 3)  //look ????link?????.??? match
-                {
-                    linkNoExt = Path.GetFileNameWithoutExtension(link);
-                    files = System.IO.Directory.GetFiles(rawDir, "*" + linkNoExt + "*");
-                    if (files.Length > 0)
-                        return Path.GetFileName(files[0]);   //file found
-                }
-            }
-            return "";  // file not found
-        }
-
-
-        /* 
-         * We get a preformated offline formatted version from the mtps system. Return true if successful.
-         * 
-         * A typical formatted file....
-         * 
-            <html xmlns="http://www.w3.org/1999/xhtml"> 
-              <head> 
-                <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" /> 
-                <meta http-equiv="Content-Location" content="http://services.mtps.microsoft.com/serviceapi/content/cc295789/en-us;expression.10/primary/mtps.offline" /> 
-                <title>Design Tools</title> 
-                <link rel="parent" href="../../../../../serviceapi/content/cc295789/en-us;expression.10" /> 
-                <meta name="Microsoft.Help.TopicLocale" content="en-us" /> 
-                <meta name="Microsoft.Help.TopicVersion" content="10" /> 
-                <meta name="SelfBranded" content="false" /> 
-                <meta name="Microsoft.Help.Locale" content="en-us" /> 
-                <meta name="Title" content="Design Tools" /> 
-          
-                <meta name="Microsoft.Help.Id" content="Expression|DesignToolsTech|$\designtoolstech.hxt@0,0" /> 
-                <meta name="Microsoft.Help.TocParent" content="N:System.Xml" /> 
-                <meta name="Microsoft.Help.TocOrder" content="0" />          
-                <meta name="Microsoft.Help.Package" content="Visual_Studio_21800791_VS_100_en-us_6" />
-              </head> 
-              ....  
-         *  
-         */
-        public Boolean DownloadOfflineFileAndSave(string contentId, string assetId, string versionId, string tocParent, string tocOrder)
-        {
-            //Special mtps service that transforms online content to full offline file
-            //If successful we just need to save it.
-            //http://services.mtps.microsoft.com/serviceapi/content/cc295789/en-us;expression.10/primary/mtps.offline
-
-            string filename = Path.Combine(rawDir, contentId + ".htm");
-
-            String url = String.Format("http://services.mtps.microsoft.com/serviceapi/content/{0}/{1};{2}/primary/mtps.offline",
-                    contentId, this.locale, versionId);
-
-            // already downloaded? The formated file starts with <?xml version="1.0" encoding="utf-8"?><html > .. <html>,
-            // while the original file start with <div> (a file fragment)
-
-            if (File.Exists(filename))
-            {
-                XmlDocument xml = new XmlDocument();
-                xml.Load(filename);
-                XmlElement xe = xml.DocumentElement;
-                if (xe != null && xe.Name == "html")
-                    return true;                          //We already downloaded the file 
-            }
-
-
-            // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            // Downloading the doc -- Modify and save as file
-            // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-            try
-            {
-                WebRequest request = WebRequest.Create(url);
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                {
-                    using (Stream fileStream = request.GetResponse().GetResponseStream())
-                    {
-                        if (fileStream == null)   //failed to load
-                            return false;
-
-                        XmlDocument xmldoc = new XmlDocument();
-                        xmldoc.Load(fileStream);
-
-                        //Find <head> section (should be 1 only))
-
-                        XmlNodeList headNodes = xmldoc.GetElementsByTagName("head");
-                        if (headNodes == null || headNodes.Count != 1)  
-                            return false;
-
-                        //Find these meta tags in <head> section
-
-                        XmlNode nodeId = null;
-                        XmlNode nodeTocParent = null;
-                        XmlNode nodeTocOrder = null;
-                        XmlNode nodePackage = null;
-
-                        foreach (XmlNode node in headNodes[0].ChildNodes)
-	                    {
-                            if (node.Name == "meta" && node.Attributes.Count >= 2)
-                            {
-                                //Console.WriteLine(node.Value + " > " + node.Attributes[0].Name + "=" + node.Attributes[0].Value + "; "
-                                //     + node.Attributes[1].Name + "=" + node.Attributes[1].Value);
-
-                                if (node.Attributes[0].Value == "Microsoft.Help.Id")
-                                    nodeId = node;
-                                else if (node.Attributes[0].Value == "Microsoft.Help.TocParent")
-                                    nodeTocParent = node;
-                                else if (node.Attributes[0].Value == "Microsoft.Help.TocOrder")
-                                    nodeTocOrder = node;
-                                else if (node.Attributes[0].Value == "Microsoft.Help.Package")
-                                    nodePackage = node;
-                            }
-	                    }
-
-                        if (nodeId == null)  //unlikely -- There should always be an ID 
-                            return false;
-
-                        // Mods...
-
-                        // Make sure the Microsoft.Help.Id is correct 
-
-                        XmlElement elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);   //add root element NamespaceUri to suppress unwanted xmlns="" attribute
-                        elem.SetAttribute("name", "Microsoft.Help.Id");
-                        elem.SetAttribute("content", assetId);
-                        headNodes[0].ReplaceChild(elem, nodeId);
-
-                        // Add or Replace TocParent meta tag <meta name="Microsoft.Help.TocParent" content="xxxxx" /> 
-
-                        elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);
-                        elem.SetAttribute("name", "Microsoft.Help.TocParent");
-                        elem.SetAttribute("content", tocParent);
-                        if (nodeTocParent == null) 
-                            nodeTocParent = headNodes[0].AppendChild(elem);
-                        else
-                            headNodes[0].ReplaceChild(elem, nodeTocParent);
-
-                        // Add or Replace TocOrder meta tag <meta name="Microsoft.Help.TocOrder" content="0" /> 
-
-                        elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);
-                        elem.SetAttribute("name", "Microsoft.Help.TocOrder");
-                        elem.SetAttribute("content", tocOrder);
-                        if (nodeTocOrder == null)  
-                            nodeTocOrder = headNodes[0].AppendChild(elem);
-                        else
-                            headNodes[0].ReplaceChild(elem, nodeTocOrder);
-
-                        // Add a package name meta tag (nice to have) <meta name="Microsoft.Help.Package" content="Visual_Studio_21800791_VS_100_en-us_6" />
-
-                        elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);
-                        elem.SetAttribute("name", "Microsoft.Help.Package");
-                        elem.SetAttribute("content", this.packageName);
-                        if (nodePackage == null)
-                            nodePackage = headNodes[0].AppendChild(elem);
-                        else
-                            headNodes[0].ReplaceChild(elem, nodePackage);
-
-
-
-                        // Fix image links <img src= > -- Guarenteed they will be wrong
-                        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        // Sometimes <img alt="xx" contains the real filename. 
-                        //      <img class="mtps-img-src" alt="Ee504799.13adbc76-a74f-4f79-af36-1db59b5d8711(en-US,WinEmbedded.60).gif" src="IC79442" />
-                        //      <img class="mtps-img-src" alt="..\local\68fc1494-758d-4923-a87d-c8a1daec9220.png" src="IC79442" />
-                        // Sometimes the real name is in the preceeding comment
-                        //      <!--src=[..\local\68fc1494-758d-4923-a87d-c8a1daec9220.png]-->
-                        //      <img class="mtps-img-src" alt="The toolbox" src="IC411623" />
-                        // Sometime we have a partial filename we need to expand
-                        //      <img class="mtps-img-src" alt="Screen shot of a taskbar  " src="visind27.png" />
-                        //      needs to be expanded to bb328626.visind27(en-us,MSDN.10).png
-
-                        
-                        XmlNodeList imgNodes = xmldoc.GetElementsByTagName("img");
-                        foreach (XmlNode node in imgNodes)
-                        {
-                            if (node == null || node.Name != "img" || node.Attributes.Count < 2)
-                                continue;
-
-                            //debug: Console.WriteLine(node.Value + " > " + node.Attributes[0].Name + "=" + node.Attributes[0].Value + "; "
-                            //         + node.Attributes[1].Name + "=" + node.Attributes[1].Value);
-
-                            string altValue = "";
-                            string srcValue = "";
-                            string cmtValue = "";
-                            String result = "";
-                            int iSrc = -1;
-
-                            // find alt= and src= position
-
-                            for (int i = 0; i < node.Attributes.Count; i++)
-                            {
-                                if (node.Attributes[i].Name == "alt")                // alt= value
-                                    altValue = Path.GetFileName(node.Attributes[i].Value);
-                                else if (node.Attributes[i].Name == "src")
-                                    iSrc = i;                                        //record where the imgName should go
-                            }
-
-                            // src= not found (unlikely)
-
-                            if (iSrc < 0)
-                                continue;
-                            srcValue = Path.GetFileName(node.Attributes[iSrc].Value);
-
-                            // Value from previous comment <!--src=[..\local\imageFilePath.png]-->
-
-                            XmlNode lastNode = node.PreviousSibling;
-                            if (lastNode != null && lastNode.NodeType == XmlNodeType.Comment)
-                            {
-                                String s = lastNode.Value;              // src=[imageFilePath.gif]
-                                if (s.Substring(0, 5) == "src=[")
-                                    cmtValue = Path.GetFileName(s.Substring(5, s.Length - 6));   // imageFilePath.gif
-                            }
-
-                            // Search for the actual filename - start off looking for exact match then widen the match parameters
-
-                            for (int validateLevel = 1; validateLevel <= 3; validateLevel++)
-			                {
-                                result = ValidateImgFilename(srcValue, contentId, validateLevel);
-                                if (result != "")
-                                    break;
-                                result = ValidateImgFilename(altValue, contentId, validateLevel);
-                                if (result != "")
-                                    break;
-                                result = ValidateImgFilename(cmtValue, contentId, validateLevel);
-                                if (result != "")
-                                    break;
-			                }
-
-
-                            // sigh! No image filename - Can probably find it in the downloaded .htm file (downloaded when we check TOC node)
-
-                            if (result == "" && File.Exists(filename))
-                            {
-                                XmlDocument xmldoc2 = new XmlDocument();
-                                xmldoc2.Load(filename);
-                                XmlNodeList imgNodes2 = xmldoc2.GetElementsByTagName("img");
-
-                                foreach (XmlNode node2 in imgNodes2)
-                                {
-                                    if (node2 == null || node2.Name != "img" || node2.Attributes.Count < 2)
-                                        continue;
-
-                                    //Looking for the <img alt= > match
-
-                                    for (int i = 0; i < node2.Attributes.Count; i++)
-                                    {
-                                        if (node2.Attributes[i].Name == "alt" && node2.Attributes[i].Value == altValue)
-                                        {
-                                            //Look at the comment before hand -- Should contain <!-- .. ImageName="bingo" .. -->
-                                            XmlNode lastNode2 = node2.PreviousSibling;
-                                            if (lastNode2 != null && lastNode2.NodeType == XmlNodeType.Comment)
-                                            {
-                                                String s = lastNode2.Value;              //<!-- .. ImageName="bingo" .. -->
-                                                const string attrName = "ImageName=\"";
-                                                var p1 = s.IndexOf(attrName);
-                                                if (p1 >= 0)
-                                                {
-                                                    p1 = p1 + attrName.Length;  //first char after opening "
-                                                    var p2 = s.IndexOf('"', p1);
-                                                    if (p2 > p1)
-                                                    {
-                                                        String attrValue = s.Substring(p1, p2 - p1);
-
-                                                        //Does this lead to a valid file name?
-                                                        for (int iLevel = 1; iLevel <= 3; iLevel++)
-                                                        {
-                                                            result = ValidateImgFilename(attrValue, contentId, iLevel);
-                                                            if (result != "")
-                                                                break;
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            if (result != "")
-                                                break;
-
-                                            if (node2.Attributes[i].Name == "src")
-                                            {
-                                                //Does this lead to a valid file name?
-                                                String srcVal = node2.Attributes[i].Value;
-
-                                                for (int iLevel = 0; iLevel <= 3; iLevel++)
-                                                {
-                                                    result = ValidateImgFilename(srcVal, contentId, iLevel);
-                                                    if (result != "")
-                                                        break;
-                                                }
-                                            }
-
-                                            if (result != "")
-                                                break;
-
-                                        }
-                                    }
-                                    if (result != "")
-                                        break;
-                                }
-                            }
-
-
-                            // Still not found? Take the first image file we find
-
-                            if (result == "")
-                            {
-                                string[] files = System.IO.Directory.GetFiles(rawDir, contentId + ".*.gif");
-                                if (files.Length == 0)
-                                    files = System.IO.Directory.GetFiles(rawDir, contentId + ".*.png");
-                                if (files.Length == 0)
-                                    files = System.IO.Directory.GetFiles(rawDir, contentId + ".*.jpg");
-                                if (files.Length > 0)
-                                    result = Path.GetFileName(files[0]);   //file found
-                            }
-
-                            // Done! Update the <img src=
-                            if (result != "")
-                            {
-                                node.Attributes[iSrc].Value = result;
-                                break;
-                            }
-                            
-                        }  // for each <img>
-
-
-                        //Save the file
-                        xmldoc.Save(filename);
-
-                        return true;
-                    }
-                }
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
 
         public void Transform(string contentId, string assetId, string metadataXml, string annotationsXml,
             string versionId, string docTitle, string tocParent, string tocOrder, Content contentDataSet)
@@ -849,4 +500,329 @@ namespace PackageThis
 
         }
     }
+
+
+    public static class DownloadMtps
+    {
+        private static String rawDir;
+
+        /* 
+         * We get a pre-formated offline version from the mtps system. Return true if successful.
+         * 
+         * A typical formatted file....
+         * 
+            <html xmlns="http://www.w3.org/1999/xhtml"> 
+              <head> 
+                <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" /> 
+                <meta http-equiv="Content-Location" content="http://services.mtps.microsoft.com/serviceapi/content/cc295789/en-us;expression.10/primary/mtps.offline" /> 
+                <title>Design Tools</title> 
+                <link rel="parent" href="../../../../../serviceapi/content/cc295789/en-us;expression.10" /> 
+                <meta name="Microsoft.Help.TopicLocale" content="en-us" /> 
+                <meta name="Microsoft.Help.TopicVersion" content="10" /> 
+                <meta name="SelfBranded" content="false" /> 
+                <meta name="Microsoft.Help.Locale" content="en-us" /> 
+                <meta name="Title" content="Design Tools" /> 
+          
+                <meta name="Microsoft.Help.Id" content="Expression|DesignToolsTech|$\designtoolstech.hxt@0,0" /> 
+                <meta name="Microsoft.Help.TocParent" content="N:System.Xml" /> 
+                <meta name="Microsoft.Help.TocOrder" content="0" />          
+                <meta name="Microsoft.Help.Package" content="Visual_Studio_21800791_VS_100_en-us_6" />
+              </head> 
+              ....  
+         *  
+         */
+        public static Boolean DownloadOfflineFileAndSave(string contentId, string assetId, string versionId, string tocParent, 
+            string tocOrder, string rawdir_, string locale, string packageName)
+        {
+            rawDir = rawdir_;
+
+            //Special mtps service that transforms online content to full offline file
+            //If successful we just need to save it.
+            //http://services.mtps.microsoft.com/serviceapi/content/cc295789/en-us;expression.10/primary/mtps.offline
+
+            string filename = Path.Combine(rawDir, contentId + ".htm");
+
+            String url = String.Format("http://services.mtps.microsoft.com/serviceapi/content/{0}/{1};{2}/primary/mtps.offline",
+                    contentId, locale, versionId);
+
+            // already downloaded? The formated file starts with <?xml version="1.0" encoding="utf-8"?><html > .. <html>,
+            // while the original file start with <div> (a file fragment)
+
+            if (File.Exists(filename))
+            {
+                XmlDocument xml = new XmlDocument();
+                xml.Load(filename);
+                XmlElement xe = xml.DocumentElement;
+                if (xe != null && xe.Name == "html")
+                    return true;                          //We already downloaded the file 
+            }
+
+
+            // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            // Downloading the doc -- Modify and save as file
+            // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+            try
+            {
+                WebRequest request = WebRequest.Create(url);
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    using (Stream fileStream = request.GetResponse().GetResponseStream())
+                    {
+                        if (fileStream == null)   //failed to load
+                            return false;
+
+                        XmlDocument xmldoc = new XmlDocument();
+                        xmldoc.Load(fileStream);
+
+                        //Find <head> section (should be 1 only))
+
+                        XmlNodeList headNodes = xmldoc.GetElementsByTagName("head");
+                        if (headNodes == null || headNodes.Count != 1)
+                            return false;
+
+                        //Find these meta tags in <head> section
+
+                        XmlNode nodeId = null;
+                        XmlNode nodeTocParent = null;
+                        XmlNode nodeTocOrder = null;
+                        XmlNode nodePackage = null;
+
+                        foreach (XmlNode node in headNodes[0].ChildNodes)
+                        {
+                            if (node.Name == "meta" && node.Attributes.Count >= 2)
+                            {
+                                //Console.WriteLine(node.Value + " > " + node.Attributes[0].Name + "=" + node.Attributes[0].Value + "; "
+                                //     + node.Attributes[1].Name + "=" + node.Attributes[1].Value);
+
+                                if (node.Attributes[0].Value == "Microsoft.Help.Id")
+                                    nodeId = node;
+                                else if (node.Attributes[0].Value == "Microsoft.Help.TocParent")
+                                    nodeTocParent = node;
+                                else if (node.Attributes[0].Value == "Microsoft.Help.TocOrder")
+                                    nodeTocOrder = node;
+                                else if (node.Attributes[0].Value == "Microsoft.Help.Package")
+                                    nodePackage = node;
+                            }
+                        }
+
+                        if (nodeId == null)  //unlikely -- There should always be an ID 
+                            return false;
+
+                        // Mods...
+
+                        // Make sure the Microsoft.Help.Id is correct 
+
+                        XmlElement elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);   //add root element NamespaceUri to suppress unwanted xmlns="" attribute
+                        elem.SetAttribute("name", "Microsoft.Help.Id");
+                        elem.SetAttribute("content", assetId);
+                        headNodes[0].ReplaceChild(elem, nodeId);
+
+                        // Add or Replace TocParent meta tag <meta name="Microsoft.Help.TocParent" content="xxxxx" /> 
+
+                        elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);
+                        elem.SetAttribute("name", "Microsoft.Help.TocParent");
+                        elem.SetAttribute("content", tocParent);
+                        if (nodeTocParent == null)
+                            nodeTocParent = headNodes[0].AppendChild(elem);
+                        else
+                            headNodes[0].ReplaceChild(elem, nodeTocParent);
+
+                        // Add or Replace TocOrder meta tag <meta name="Microsoft.Help.TocOrder" content="0" /> 
+
+                        elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);
+                        elem.SetAttribute("name", "Microsoft.Help.TocOrder");
+                        elem.SetAttribute("content", tocOrder);
+                        if (nodeTocOrder == null)
+                            nodeTocOrder = headNodes[0].AppendChild(elem);
+                        else
+                            headNodes[0].ReplaceChild(elem, nodeTocOrder);
+
+                        // Add a package name meta tag (nice to have) <meta name="Microsoft.Help.Package" content="Visual_Studio_21800791_VS_100_en-us_6" />
+
+                        elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);
+                        elem.SetAttribute("name", "Microsoft.Help.Package");
+                        elem.SetAttribute("content", packageName);
+                        if (nodePackage == null)
+                            nodePackage = headNodes[0].AppendChild(elem);
+                        else
+                            headNodes[0].ReplaceChild(elem, nodePackage);
+
+
+
+                        // Fix image links <img src= > -- Guarenteed they will be wrong
+                        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        // Sometimes <img alt="xx" contains the real filename. 
+                        //      <img class="mtps-img-src" alt="Ee504799.13adbc76-a74f-4f79-af36-1db59b5d8711(en-US,WinEmbedded.60).gif" src="IC79442" />
+                        //      <img class="mtps-img-src" alt="..\local\68fc1494-758d-4923-a87d-c8a1daec9220.png" src="IC79442" />
+                        // Sometimes the real name is in the preceeding comment
+                        //      <!--src=[..\local\68fc1494-758d-4923-a87d-c8a1daec9220.png]-->
+                        //      <img class="mtps-img-src" alt="The toolbox" src="IC411623" />
+                        // Sometime we have a partial filename we need to expand
+                        //      <img class="mtps-img-src" alt="Screen shot of a taskbar  " src="visind27.png" />
+                        //      needs to be expanded to bb328626.visind27(en-us,MSDN.10).png
+
+
+                        XmlNodeList imgNodes = xmldoc.GetElementsByTagName("img");
+                        foreach (XmlNode node in imgNodes)
+                        {
+                            if (node == null || node.Name != "img" || node.Attributes.Count < 2)
+                                continue;
+
+                            //debug: Console.WriteLine(node.Value + " > " + node.Attributes[0].Name + "=" + node.Attributes[0].Value + "; "
+                            //         + node.Attributes[1].Name + "=" + node.Attributes[1].Value);
+
+                            string altValue = "";
+                            string srcValue = "";
+                            string cmtValue = "";
+                            String result = "";
+                            int iSrc = -1;
+
+                            // find alt= and src= position
+
+                            for (int i = 0; i < node.Attributes.Count; i++)
+                            {
+                                if (node.Attributes[i].Name == "alt")                // alt= value
+                                    altValue = Path.GetFileName(node.Attributes[i].Value);
+                                else if (node.Attributes[i].Name == "src")
+                                    iSrc = i;                                        //record where the imgName should go
+                            }
+
+                            // src= not found (unlikely)
+
+                            if (iSrc < 0)
+                                continue;
+                            srcValue = Path.GetFileName(node.Attributes[iSrc].Value);
+
+                            // Value from previous comment <!--src=[..\local\imageFilePath.png]-->
+
+                            XmlNode lastNode = node.PreviousSibling;
+                            if (lastNode != null && lastNode.NodeType == XmlNodeType.Comment)
+                            {
+                                String s = lastNode.Value;              // src=[./imageFilePath.gif]
+                                if (s.Substring(0, 5) == "src=[")
+                                    cmtValue = Path.GetFileName(s.Substring(5, s.Length - 6));   // imageFilePath.gif
+                            }
+
+                            // Search for the actual filename - start off looking for exact match then widen the match parameters
+
+                            for (int validateLevel = 1; validateLevel <= 3; validateLevel++)
+                            {
+                                result = ValidateImgFilename(srcValue, contentId, validateLevel);
+                                if (result != "")
+                                    break;
+                                result = ValidateImgFilename(altValue, contentId, validateLevel);
+                                if (result != "")
+                                    break;
+                                result = ValidateImgFilename(cmtValue, contentId, validateLevel);
+                                if (result != "")
+                                    break;
+                            }
+
+
+                            // sigh! No image filename - Can probably find it in the downloaded .htm file (downloaded when we check TOC node)
+
+                            if (result == "" && File.Exists(filename))
+                            {
+                                XmlDocument xmldoc2 = new XmlDocument();
+                                xmldoc2.Load(filename);
+                                XmlNodeList imgNodes2 = xmldoc2.GetElementsByTagName("img");
+
+                                foreach (XmlNode node2 in imgNodes2)  // for all image nodes
+                                {
+                                    if (node2 == null || node2.Name != "img" || node2.Attributes.Count < 2)
+                                        continue;
+
+                                    string altValue2 = node2.Attributes["alt"].Value;
+                                    if (altValue2 == altValue)
+                                    {
+                                        String srcVal = node2.Attributes["src"].Value;
+                                        for (int iLevel = 0; iLevel <= 3; iLevel++)
+                                        {
+                                            result = ValidateImgFilename(srcVal, contentId, iLevel);
+                                            if (result != "")
+                                                break;
+                                        }
+                                    }
+                                    if (result != "")
+                                        break;
+                                }
+                            }
+
+
+                            // Still not found? Take the first image file we find
+
+                            if (result == "")
+                            {
+                                string[] files = System.IO.Directory.GetFiles(rawDir, contentId + ".*.gif");
+                                if (files.Length == 0)
+                                    files = System.IO.Directory.GetFiles(rawDir, contentId + ".*.png");
+                                if (files.Length == 0)
+                                    files = System.IO.Directory.GetFiles(rawDir, contentId + ".*.jpg");
+                                if (files.Length > 0)
+                                    result = Path.GetFileName(files[0]);   //file found
+                            }
+
+                            // Done! Update the <img src=
+                            if (result != "")
+                            {
+                                node.Attributes[iSrc].Value = result;
+                                break;
+                            }
+
+                        }  // for each <img>
+
+
+                        //Save the file
+                        xmldoc.Save(filename);
+
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
+        private static String ValidateImgFilename(String link, String contentId, int valLevel)
+        {
+            if (link.Length != 0)
+            {
+                string[] files;
+                String linkNoExt;
+
+                if (valLevel == 1)  //look for exact match
+                {
+                    files = System.IO.Directory.GetFiles(rawDir, link);
+                    if (files.Length > 0)
+                        return Path.GetFileName(files[0]);   //file found
+                }
+
+                if (valLevel == 2)  //look contentId.link?????.??? match
+                {
+                    linkNoExt = Path.GetFileNameWithoutExtension(link);
+                    files = System.IO.Directory.GetFiles(rawDir, contentId + "." + linkNoExt + "*");
+                    if (files.Length > 0)
+                        return Path.GetFileName(files[0]);   //file found
+                }
+
+                if (valLevel == 3)  //look ????link?????.??? match
+                {
+                    linkNoExt = Path.GetFileNameWithoutExtension(link);
+                    files = System.IO.Directory.GetFiles(rawDir, "*" + linkNoExt + "*");
+                    if (files.Length > 0)
+                        return Path.GetFileName(files[0]);   //file found
+                }
+            }
+            return "";  // file not found
+        }
+
+
+    }
+
+
+
 }
