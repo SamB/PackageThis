@@ -146,10 +146,11 @@ namespace ContentServiceLibrary
             document.selector = "Mtps.Search";
             documents.Add(document);
 
-            document = new requestedDocument();
+            // Mtps.Annotations removed because it caused many bugs
+            /*document = new requestedDocument();
             document.type = documentTypes.feature;
             document.selector = "Mtps.Annotations";
-            documents.Add(document);
+            documents.Add(document);*/
 
             if (loadFailSafe == true)
             {
@@ -226,7 +227,7 @@ namespace ContentServiceLibrary
             }
 
 
-            foreach (feature featureDoc in response.featureDocuments)
+            /*foreach (feature featureDoc in response.featureDocuments)
             {
                 if (featureDoc.Any != null)
                 {
@@ -235,14 +236,14 @@ namespace ContentServiceLibrary
                         annotations = featureDoc.Any[0].OuterXml;
                     }
                 }
-            }
+            }*/
 
             // If we get no meta/search or wiki data, plug in NOP data because
             // we can't LoadXml an empty string nor pass null navigators to
             // the transform.
             if (string.IsNullOrEmpty(metadata) == true)
                 metadata = "<se:search xmlns:se=\"urn:mtpg-com:mtps/2004/1/search\" />";
-            if (string.IsNullOrEmpty(annotations) == true)
+            //if (string.IsNullOrEmpty(annotations) == true)
                 annotations = "<an:annotations xmlns:an=\"urn:mtpg-com:mtps/2007/1/annotations\" />";
 
 
