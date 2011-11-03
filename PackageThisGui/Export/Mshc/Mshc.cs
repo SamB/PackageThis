@@ -664,13 +664,15 @@ namespace PackageThis
 
 
                         XmlNodeList imgNodes = xmldoc.GetElementsByTagName("img");
+                        //Console.WriteLine("imgNodes.Count=" + imgNodes.Count);
                         foreach (XmlNode node in imgNodes)
                         {
                             if (node == null || node.Name != "img" || node.Attributes.Count < 2)
                                 continue;
 
-                            //debug: Console.WriteLine(node.Value + " > " + node.Attributes[0].Name + "=" + node.Attributes[0].Value + "; "
-                            //         + node.Attributes[1].Name + "=" + node.Attributes[1].Value);
+                            /*Console.WriteLine();
+                            Console.WriteLine(node.Value + " > " + node.Attributes[0].Name + "=" + node.Attributes[0].Value + "; "
+                                       + node.Attributes[1].Name + "=" + node.Attributes[1].Value);*/
 
                             string altValue = "";
                             string srcValue = "";
@@ -694,6 +696,8 @@ namespace PackageThis
                                 continue;
                             srcValue = Path.GetFileName(node.Attributes[iSrc].Value);
 
+                            //Console.WriteLine("srcValue=" + srcValue);
+
                             // Value from previous comment <!--src=[..\local\imageFilePath.png]-->
 
                             XmlNode lastNode = node.PreviousSibling;
@@ -703,6 +707,8 @@ namespace PackageThis
                                 if (s.Substring(0, 5) == "src=[")
                                     cmtValue = Path.GetFileName(s.Substring(5, s.Length - 6));   // imageFilePath.gif
                             }
+
+                            //Console.WriteLine("cmtValue=" + cmtValue);
 
                             // Search for the actual filename - start off looking for exact match then widen the match parameters
 
@@ -719,8 +725,8 @@ namespace PackageThis
                                     break;
                             }
 
-
                             // sigh! No image filename - Can probably find it in the downloaded .htm file (downloaded when we check TOC node)
+                            //Console.WriteLine("result1=" + result);
 
                             if (result == "" && File.Exists(filename))
                             {
@@ -737,7 +743,7 @@ namespace PackageThis
                                     if (altValue2 == altValue)
                                     {
                                         String srcVal = node2.Attributes["src"].Value;
-                                        for (int iLevel = 0; iLevel <= 3; iLevel++)
+                                        for (int iLevel = 1; iLevel <= 3; iLevel++)
                                         {
                                             result = ValidateImgFilename(srcVal, contentId, iLevel);
                                             if (result != "")
@@ -749,9 +755,9 @@ namespace PackageThis
                                 }
                             }
 
-
+                            //Console.WriteLine("result2=" + result);
+/*
                             // Still not found? Take the first image file we find
-
                             if (result == "")
                             {
                                 string[] files = System.IO.Directory.GetFiles(rawDir, contentId + ".*.gif");
@@ -762,16 +768,11 @@ namespace PackageThis
                                 if (files.Length > 0)
                                     result = Path.GetFileName(files[0]);   //file found
                             }
-
+*/
                             // Done! Update the <img src=
                             if (result != "")
-                            {
                                 node.Attributes[iSrc].Value = result;
-                                break;
-                            }
-
                         }  // for each <img>
-
 
                         //Save the file
                         xmldoc.Save(filename);
@@ -780,8 +781,9 @@ namespace PackageThis
                     }
                 }
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine(ex.ToString());
                 return false;
             }
         }
@@ -789,40 +791,47 @@ namespace PackageThis
 
         private static String ValidateImgFilename(String link, String contentId, int valLevel)
         {
-            if (link.Length != 0)
+            try
             {
-                string[] files;
-                String linkNoExt;
+                /*Console.WriteLine("  link=" + link);
+                Console.WriteLine("  contentId=" + contentId);
+                Console.WriteLine("  validateLevel=" + valLevel);*/
 
-                if (valLevel == 1)  //look for exact match
+                if (link.Length != 0)
                 {
-                    files = System.IO.Directory.GetFiles(rawDir, link);
-                    if (files.Length > 0)
-                        return Path.GetFileName(files[0]);   //file found
-                }
+                    string[] files;
+                    String linkNoExt;
 
-                if (valLevel == 2)  //look contentId.link?????.??? match
-                {
-                    linkNoExt = Path.GetFileNameWithoutExtension(link);
-                    files = System.IO.Directory.GetFiles(rawDir, contentId + "." + linkNoExt + "*");
-                    if (files.Length > 0)
-                        return Path.GetFileName(files[0]);   //file found
-                }
+                    if (valLevel == 1)  //look for exact match
+                    {
+                        files = System.IO.Directory.GetFiles(rawDir, link);
+                        if (files.Length > 0)
+                            return Path.GetFileName(files[0]);   //file found
+                    }
 
-                if (valLevel == 3)  //look ????link?????.??? match
-                {
-                    linkNoExt = Path.GetFileNameWithoutExtension(link);
-                    files = System.IO.Directory.GetFiles(rawDir, "*" + linkNoExt + "*");
-                    if (files.Length > 0)
-                        return Path.GetFileName(files[0]);   //file found
+                    if (valLevel == 2)  //look contentId.link?????.??? match
+                    {
+                        linkNoExt = Path.GetFileNameWithoutExtension(link);
+                        files = System.IO.Directory.GetFiles(rawDir, contentId + "." + linkNoExt + "*");
+                        if (files.Length > 0)
+                            return Path.GetFileName(files[0]);   //file found
+                    }
+
+                    if (valLevel == 3)  //look ????link?????.??? match
+                    {
+                        linkNoExt = Path.GetFileNameWithoutExtension(link);
+                        files = System.IO.Directory.GetFiles(rawDir, "*" + linkNoExt + "*");
+                        if (files.Length > 0)
+                            return Path.GetFileName(files[0]);   //file found
+                    }
                 }
             }
+            catch
+            {
+                return "";  // file not found
+            }
+            
             return "";  // file not found
         }
-
-
-    }
-
-
-
+   }
 }

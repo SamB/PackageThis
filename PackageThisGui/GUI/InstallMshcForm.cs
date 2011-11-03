@@ -19,7 +19,7 @@ namespace PackageThis
             //show last settings -- The .msha file lives in the same folder as the .mshc file
 
             String mshcFileName = Gui.GetString(Gui.VID_MshcFile, "");  //The file entered in the export dialog
-            if (mshcFileName.Length != 0)
+            if ((object)mshcFileName != null && mshcFileName.Length != 0)
                 MshaFileTextBox.Text = Path.GetDirectoryName(mshcFileName) + @"\HelpContentSetup.msha";
             else
                 MshaFileTextBox.Text = Gui.GetString(MshaFileTextBox.Name, "");
