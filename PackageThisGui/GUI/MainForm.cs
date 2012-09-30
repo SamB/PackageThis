@@ -15,6 +15,7 @@ using System.Diagnostics;
 using PackageThis.MtpsFiles;
 using MSHelpCompiler;
 using Microsoft.Win32;
+using MiscFuncs;
 
 namespace PackageThis
 {
@@ -23,8 +24,11 @@ namespace PackageThis
         static private AppController appController;
         static private string currentLocale = CultureInfo.CurrentCulture.Name.ToLower();
         static private string workingDir;
+        static private string cacheDir;
         static private string tempPath;
         static private string tempDir;
+
+        private bool useWaitCursor = true;
 
         public MainForm()
         {
@@ -58,6 +62,14 @@ namespace PackageThis
                 appController = new AppController(rootContentItem.contentId, currentLocale, rootContentItem.version,
                     TOCTreeView, workingDir);
 
+                //Give AppController Access to the UI
+                debugEdit.WordWrap = false;
+                appController._rtDebug = new RichTextBoxFuncs(debugEdit);
+                appController._rtDebug.WriteLine("Exceptions will appear here. Please report an errors reported to CodePlex.", Color.Chocolate);
+                appController._rtDebug.WriteLine("");
+                appController._tabControl = tabControl1;
+                appController._tabPage_Debug = tabPage_Debug;
+                appController._tabPage_List = tabPage_List;
             }
             finally
             {
@@ -121,14 +133,14 @@ namespace PackageThis
 
         private void TOCTreeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
         {
-            Cursor.Current = Cursors.WaitCursor;
+            if (useWaitCursor) Cursor.Current = Cursors.WaitCursor;
             try
             {
                 appController.ExpandNode(e.Node);
             }
             finally
             {
-                Cursor.Current = Cursors.Default;
+                if (useWaitCursor) Cursor.Current = Cursors.Default;
             }
         }
 
@@ -182,7 +194,7 @@ namespace PackageThis
 
         private void reloadLibrary()
         {
-            Cursor.Current = Cursors.WaitCursor;
+            if (useWaitCursor) Cursor.Current = Cursors.WaitCursor;
 
             try
             {
@@ -212,7 +224,7 @@ namespace PackageThis
             }
             finally
             {
-                Cursor.Current = Cursors.Default;
+                if (useWaitCursor) Cursor.Current = Cursors.Default;
             }
 
         }
@@ -225,7 +237,7 @@ namespace PackageThis
             
             if (e.Node.Checked == false)
             {
-                Cursor.Current = Cursors.WaitCursor;
+                if (useWaitCursor) Cursor.Current = Cursors.WaitCursor;
                 try
                 {
                     if (appController.WriteContent(e.Node, ContentDataSet) == false)
@@ -233,12 +245,20 @@ namespace PackageThis
                 }
                 finally
                 {
-                    Cursor.Current = Cursors.Default;
+                    if (useWaitCursor) Cursor.Current = Cursors.Default;
                 }
             }
             else
             {
-                appController.RemoveContent(e.Node, ContentDataSet);
+                if (useWaitCursor) Cursor.Current = Cursors.WaitCursor;
+                try
+                {
+                    appController.RemoveContent(e.Node, ContentDataSet);
+                }
+                finally
+                {
+                    if (useWaitCursor) Cursor.Current = Cursors.Default;
+                }
             }
         }
 
@@ -260,12 +280,40 @@ namespace PackageThis
 
         private void selectNodeAndChildrenToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            DownloadProgressForm dpf = new DownloadProgressForm(TOCTreeView.SelectedNode,
-                ContentDataSet);
+            useWaitCursor = false;  //Don't need a wait corsor as we have a modal dialog
+            try
+            {
+                DownloadProgressForm dpf = new DownloadProgressForm(TOCTreeView.SelectedNode,
+                    ContentDataSet);
 
-            dpf.ShowDialog();
+                dpf.ShowDialog();
+            }
+            finally
+            {
+                useWaitCursor = true;
+            }
 
         }
+
+        //Expand all sub nodes
+        private void expandSiblingNodesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            useWaitCursor = false;  //Don't need a wait corsor as we have a modal dialog
+            try
+            {
+                ExpandProgressForm epf = new ExpandProgressForm(TOCTreeView.SelectedNode);
+
+                epf.ShowDialog();
+            }
+            finally
+            {
+                useWaitCursor = true;
+            }
+        }
+
+
+
+
 
         private void deselectThisNodeAndAllChildrenToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -301,7 +349,7 @@ namespace PackageThis
             {
                 Directory.Delete(workingDir, true);
             }
-            catch (IOException ex)
+            catch //(IOException ex)
             {
             }
 
@@ -310,10 +358,18 @@ namespace PackageThis
         private void CreateTempDir()
         {
             tempPath = Path.Combine(Path.GetTempPath(), "PackageThis");  // <-- If we are not going to cleanup properly then lets atleast group under this folder 
-            tempDir = Path.GetRandomFileName();
+            
+            //Make the Temp dir 2012-09-12-231501 (12th Sept 2012, 23:15 & 01 second) in preparation for recovery code.
+            DateTime now = DateTime.Now;
+            tempDir = String.Format("{0}-{1}-{2}-{3}",
+                now.Year.ToString("####"), now.Month.ToString("0#"), now.Day.ToString("0#"), now.ToString("HHmmss"));   // HH = 24 hour format
+            //tempDir = Path.GetRandomFileName();
+
             workingDir = Path.Combine(tempPath, tempDir) + "\\";
             Directory.CreateDirectory(workingDir);
 
+            cacheDir = Path.Combine(tempPath, "cache") + "\\";   // not currently used -- Data recovery will be difficult given the way the programn is written
+            Directory.CreateDirectory(cacheDir);
         }
 
         private void exportToChmFileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -341,7 +397,24 @@ namespace PackageThis
 
             appController.CreateChm(frm.ChmFileTextBox.Text, frm.TitleTextBox.Text,
                 currentLocale, ContentDataSet);
-               
+
+            //Show the output folder
+            ShowFileinExplorer(frm.ChmFileTextBox.Text);
+        }
+
+        private void ShowFileinExplorer(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    string argument = "/select, \"" + filePath + "\"";
+                    System.Diagnostics.Process.Start("explorer.exe", argument);
+                }
+                catch
+                {
+                }
+            }
         }
 
         private void exportToHxsFileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -376,6 +449,7 @@ namespace PackageThis
                 currentLocale,
                 ContentDataSet);
 
+            ShowFileinExplorer(exportDialog.FileTextBox.Text);
         }
 
         private void exportToMshcFileToolStripMenuItem_Click(object sender, EventArgs e)
@@ -389,8 +463,10 @@ namespace PackageThis
                 return;
 
             appController.CreateMshc(frm.MshcFileTextBox.Text,
-                currentLocale, ContentDataSet, frm.VendorName.Text, frm.ProdName.Text, frm.BookName.Text);
+                currentLocale, ContentDataSet, frm.VendorName.Text, frm.ProdName.Text, frm.BookName.Text,
+                frm.RootTopicSuffix.Text, frm.RootTopicParent.Text, frm.TopicVersionCbx.Checked, frm.TopicVersion.Text);
 
+            ShowFileinExplorer(frm.MshcFileTextBox.Text);
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -401,40 +477,28 @@ namespace PackageThis
 
         public string AssemblyVersion { get; set; }
 
+
+
         private void toolStripMenuOnlineDocumentation_Click(object sender, EventArgs e)
         {
             Process.Start("http://packagethis.codeplex.com/documentation");
         }
 
+        private void toolStripMenuTutorial_Click(object sender, EventArgs e)
+        {
+            Process.Start("http://packagethis.codeplex.com/wikipage?title=PackageThis%20Tutorial");
+        }
+
+
+
+
         private void mnuInstallMshcHelpFile_Click(object sender, EventArgs e)
         {
+            InstallMshcForm.defaultLocale = currentLocale;
             InstallMshcForm frm = new InstallMshcForm();
-            frm.LocaleName.Text = currentLocale;
 
             if (frm.ShowDialog() != DialogResult.OK)
                 return;
-
-            string HelpLibManagerExe = @"c:\program files\Microsoft Help Viewer\v1.0\HelpLibManager.exe";
-            string arguments = String.Format(@"/product {0} /version {1} /locale {2}", frm.ProdName.Text, frm.VersionName.Text, frm.LocaleName.Text);
-
-            // Install
-
-            if (frm.MshaFileTextBox.Text.Length != 0)
-                arguments = arguments + String.Format(@" /sourceMedia {0}", frm.MshaFileTextBox.Text);
-
-            if (File.Exists(HelpLibManagerExe) == false)
-            {
-                MessageBox.Show("File not found: " +  HelpLibManagerExe);
-                return;
-            }
-
-            Process process = new Process();
-            process.StartInfo.FileName = HelpLibManagerExe;
-            process.StartInfo.Arguments = arguments; 
-            process.StartInfo.UseShellExecute = true;
-            process.StartInfo.Verb = "runas";  //run as administrator -- Required for installation
-            process.Start();
-
         }
 
         //eg. Open associated web page http://msdn.microsoft.com/en-us/library/ms533050(v=vs.85).aspx
@@ -443,10 +507,14 @@ namespace PackageThis
             if (TOCTreeView.SelectedNode != null)
             {
                 MtpsNode mtpsNode = TOCTreeView.SelectedNode.Tag as MtpsNode;
-                String docContentId = appController.GetDocShortId(TOCTreeView.SelectedNode); 
+                String docContentId = appController.GetDocShortId(TOCTreeView.SelectedNode);
 
-                Process.Start(String.Format("http://msdn.microsoft.com/{0}/library/{1}({2}).aspx",
-                    mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion));
+                String url;
+                if (rootContentItem.msdnSelected)
+                    url = String.Format("http://msdn.microsoft.com/{0}/library/{1}({2}).aspx", mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion);
+                else
+                    url = String.Format("http://technet.microsoft.com/{0}/library/{1}({2}).aspx", mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion);
+                Process.Start(url);
             }
         }
 
@@ -493,6 +561,40 @@ namespace PackageThis
         {
             Process.Start(workingDir);
         }
+
+        //=============== Page Tabs =================
+
+        TreeNode _lastTreeNodeSelected = null;
+
+        private void ViewSelectedInOnlineTab()
+        {
+            if (_lastTreeNodeSelected != null)
+            {
+                MtpsNode mtpsNode = _lastTreeNodeSelected.Tag as MtpsNode;
+                String docContentId = appController.GetDocShortId(_lastTreeNodeSelected);
+                String url;
+                if (rootContentItem.msdnSelected)
+                    url = String.Format("http://msdn.microsoft.com/{0}/library/{1}({2}).aspx", mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion);
+                else
+                    url = String.Format("http://technet.microsoft.com/{0}/library/{1}({2}).aspx", mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion);
+                webBrowser1.Navigate(url);
+            }
+        }
+
+        private void TOCTreeView_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+            _lastTreeNodeSelected = TOCTreeView.SelectedNode;
+            if (tabControl1.SelectedTab == tabPage_Online)
+                ViewSelectedInOnlineTab();
+        }
+
+        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (tabControl1.SelectedTab == tabPage_Online)
+                ViewSelectedInOnlineTab();
+        }
+
+
 
 
     }

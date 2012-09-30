@@ -14,6 +14,8 @@ using System.Windows.Forms;
 using MSHelpCompiler;
 using ContentServiceLibrary;
 using PackageThis.MtpsFiles;
+using System.Diagnostics;
+using MiscFuncs;
 
 // Version variables in this code are collection + "." + version, but ContentItem requires a
 // version and collection, eg. version="10", collection="MSDN"
@@ -70,6 +72,14 @@ namespace PackageThis
 
         private string workingDir;
         private string rawDir;
+
+        //These set by main form
+        public RichTextBoxFuncs _rtDebug = null;
+        public TabControl _tabControl = null;
+        public TabPage _tabPage_Debug = null;
+        public TabPage _tabPage_List = null;
+
+        private int exceptionCount = 0;
 
         // static private StreamWriter sw;
 
@@ -226,9 +236,9 @@ namespace PackageThis
                 }
                 
                 node.Nodes.Remove(node.Nodes[0]); // This removes the node labeled "+"
-
             }
         }
+
 
         public void UncheckNodes(TreeNode node)
         {
@@ -290,114 +300,195 @@ namespace PackageThis
         {
             DataRow row;
             MtpsNode mtpsNode = node.Tag as MtpsNode;
+            ContentItem contentItem = null;
             
             string[] splitVersion = mtpsNode.targetVersion.Split(new char[] {'.'});
-            
-            ContentItem contentItem = new ContentItem("AssetId:" + mtpsNode.targetAssetId, mtpsNode.targetLocale,
-                splitVersion[1], splitVersion[0], application);
+            string sdebug = "";
+
 
             try
             {
-                contentItem.Load(true);
+                sdebug = "z0";
+                contentItem = new ContentItem("AssetId:" + mtpsNode.targetAssetId, mtpsNode.targetLocale,
+                    splitVersion[1], splitVersion[0], application);
 
-                // RWC: This is a HACK -- There are a few pages where the ContentId returns as null even though it's a valid page
-                //
-                if (String.IsNullOrEmpty(contentItem.contentId))  
+                try
                 {
-                    contentItem.contentId = GetDocShortId(node);
-                }
+                    sdebug = "z1";
+                    contentItem.Load(true);
+                    sdebug = "z2";
 
-            }
-                
-            catch
-            {
-                node.ForeColor = System.Drawing.Color.Red;
-                return false; // tell the event handler to reject the click.
-            }
-
-            if (contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId) == null)
-            {
-                //Issue#14155: Sometimes there can be missing values that cause exceptions. 
-                //Lets's try and bluff our way through
-                if (string.IsNullOrEmpty(contentItem.contentId))  
-                {
-                    node.ForeColor = System.Drawing.Color.Red;   //Set tree node red to flag problem
-                    contentItem.contentId = "PackageThis-" + mtpsNode.targetAssetId;  //Create a repeatable ID using the Asset ID
-                }
-                // If we get no meta/search or wiki data, plug in NOP data so we can limp along (this usually comes with null contentId above)
-                if (string.IsNullOrEmpty(contentItem.metadata))   
-                    contentItem.metadata = "<se:search xmlns:se=\"urn:mtpg-com:mtps/2004/1/search\" />";
-                if (string.IsNullOrEmpty(contentItem.annotations))
-                    contentItem.annotations = "<an:annotations xmlns:an=\"urn:mtpg-com:mtps/2007/1/annotations\" />";
-
-                row = contentDataSet.Tables["Item"].NewRow();
-                row["ContentId"] = contentItem.contentId;
-                row["Title"] = mtpsNode.title;
-                row["VersionId"] = mtpsNode.targetVersion;
-                row["AssetId"] = mtpsNode.targetAssetId;
-                row["Pictures"] = contentItem.numImages;
-                row["Size"] = contentItem.xml == null ? 0 : contentItem.xml.Length;
-                row["Metadata"] = contentItem.metadata;
-                row["Annotations"] = contentItem.annotations;
-
-                contentDataSet.Tables["Item"].Rows.Add(row);
-            }
-            if (contentDataSet.Tables["ItemInstance"].Rows.Find(node.FullPath) == null)
-            {
-                row = contentDataSet.Tables["ItemInstance"].NewRow();
-                row["ContentId"] = contentItem.contentId;
-                row["FullPath"] = node.FullPath;
-                contentDataSet.Tables["ItemInstance"].Rows.Add(row);
-            }
-            foreach (string imageFilename in contentItem.ImageFilenames)
-            {
-                row = contentDataSet.Tables["Picture"].NewRow();
-                row["ContentId"] = contentItem.contentId;
-                row["Filename"] = imageFilename;
-            }
-
-
-            if (string.IsNullOrEmpty(contentItem.links) == false)
-            {
-                XmlDocument linkDoc = new XmlDocument();
-                XmlNamespaceManager nsm = new XmlNamespaceManager(linkDoc.NameTable);
-                nsm.AddNamespace("k", "urn:mtpg-com:mtps/2004/1/key");
-                nsm.AddNamespace("mtps", "urn:msdn-com:public-content-syndication");
-
-                linkDoc.LoadXml(contentItem.links);
-
-                XmlNodeList nodes = linkDoc.SelectNodes("//mtps:link", nsm);
-
-                foreach (XmlNode xmlNode in nodes)
-                {
-                    XmlNode assetIdNode = xmlNode.SelectSingleNode("mtps:assetId", nsm);
-                    XmlNode contentIdNode = xmlNode.SelectSingleNode("k:contentId", nsm);
-
-                    if (assetIdNode == null || contentIdNode == null)
-                        continue;
-
-                    string assetId = assetIdNode.InnerText;
-                    string contentId = contentIdNode.InnerText;
-
-                    if (string.IsNullOrEmpty(assetId) == false)
+                    // RWC: This is a HACK -- There are a few pages where the ContentId returns as null even though it's a valid page
+                    //
+                    if (String.IsNullOrEmpty(contentItem.contentId))
                     {
-                        // Remove "assetId:" from front
-                        assetId = HttpUtility.UrlDecode(assetIdNode.InnerText.Remove(0, "assetId:".Length));
-
-                        if (links.ContainsKey(assetId) == false)
-                        {
-                            links.Add(assetId, contentId);
-                        }
+                        contentItem.contentId = GetDocShortId(node);
                     }
-
+                    sdebug = "z3";
                 }
+
+                catch
+                {
+                    node.ForeColor = System.Drawing.Color.Red;
+                    return false; // tell the event handler to reject the click.
+                }
+
+                sdebug = "z4";
+                if (contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId) == null)
+                {
+                    sdebug = "z5";
+                    //Issue#14155: Sometimes there can be missing values that cause exceptions. 
+                    //Lets's try and bluff our way through
+                    if (string.IsNullOrEmpty(contentItem.contentId))
+                    {
+                        sdebug = "z6";
+                        node.ForeColor = System.Drawing.Color.Red;   //Set tree node red to flag problem
+                        contentItem.contentId = "PackageThis-" + mtpsNode.targetAssetId;  //Create a repeatable ID using the Asset ID
+                    }
+                    sdebug = "z7";
+                    // If we get no meta/search or wiki data, plug in NOP data so we can limp along (this usually comes with null contentId above)
+                    if (string.IsNullOrEmpty(contentItem.metadata))
+                        contentItem.metadata = "<se:search xmlns:se=\"urn:mtpg-com:mtps/2004/1/search\" />";
+                    if (string.IsNullOrEmpty(contentItem.annotations))
+                        contentItem.annotations = "<an:annotations xmlns:an=\"urn:mtpg-com:mtps/2007/1/annotations\" />";
+                    sdebug = "z8";
+
+                    row = contentDataSet.Tables["Item"].NewRow();
+                    row["ContentId"] = contentItem.contentId;
+                    row["Title"] = mtpsNode.title;
+                    row["VersionId"] = mtpsNode.targetVersion;
+                    row["AssetId"] = mtpsNode.targetAssetId;
+                    row["Pictures"] = contentItem.numImages;
+                    row["Size"] = contentItem.xml == null ? 0 : contentItem.xml.Length;
+                    row["Metadata"] = contentItem.metadata;
+                    row["Annotations"] = contentItem.annotations;
+                    sdebug = "z9";
+
+                    contentDataSet.Tables["Item"].Rows.Add(row);
+                }
+                sdebug = "z10";
+                if (contentDataSet.Tables["ItemInstance"].Rows.Find(node.FullPath) == null)
+                {
+                    sdebug = "z11";
+                    row = contentDataSet.Tables["ItemInstance"].NewRow();
+                    row["ContentId"] = contentItem.contentId;
+                    row["FullPath"] = node.FullPath;
+                    contentDataSet.Tables["ItemInstance"].Rows.Add(row);
+                    sdebug = "z12";
+                }
+                sdebug = "z13";
+                foreach (string imageFilename in contentItem.ImageFilenames)
+                {
+                    sdebug = "z14";
+                    row = contentDataSet.Tables["Picture"].NewRow();
+                    row["ContentId"] = contentItem.contentId;
+                    row["Filename"] = imageFilename;
+                    sdebug = "z15";
+                }
+
+
+                sdebug = "z16";
+                if (string.IsNullOrEmpty(contentItem.links) == false)
+                {
+                    sdebug = "z17";
+                    XmlDocument linkDoc = new XmlDocument();
+                    XmlNamespaceManager nsm = new XmlNamespaceManager(linkDoc.NameTable);
+                    nsm.AddNamespace("k", "urn:mtpg-com:mtps/2004/1/key");
+                    nsm.AddNamespace("mtps", "urn:msdn-com:public-content-syndication");
+                    sdebug = "z18";
+
+                    linkDoc.LoadXml(contentItem.links);
+                    sdebug = "z19";
+
+                    XmlNodeList nodes = linkDoc.SelectNodes("//mtps:link", nsm);
+                    sdebug = "z20";
+
+                    int z = 0;
+                    foreach (XmlNode xmlNode in nodes)
+                    {
+                        z++;
+                        sdebug = "z21_" + z.ToString();
+
+                        XmlNode assetIdNode = xmlNode.SelectSingleNode("mtps:assetId", nsm);
+                        XmlNode contentIdNode = xmlNode.SelectSingleNode("k:contentId", nsm);
+                        sdebug = "z22_" + z.ToString();
+
+                        if (assetIdNode == null || contentIdNode == null)
+                            continue;
+
+                        string assetId = assetIdNode.InnerText;
+                        string contentId = contentIdNode.InnerText;
+                        sdebug = "z23_" + z.ToString();
+
+                        if (string.IsNullOrEmpty(assetId) == false)
+                        {
+                            // Remove "assetId:" from front
+                            assetId = HttpUtility.UrlDecode(assetIdNode.InnerText.Remove(0, "assetId:".Length));
+                            sdebug = "z24_" + z.ToString();
+
+                            if (links.ContainsKey(assetId) == false)
+                            {
+                                links.Add(assetId, contentId);
+                                sdebug = "z25_" + z.ToString();
+                            }
+                        }
+
+                    }
+                }
+
+                sdebug = "z26";
+                contentItem.Write(rawDir);
+                sdebug = "z27";
+
+                UpdateStatusText_ListTab(contentDataSet);
+                //throw new Exception("Test Exception");
             }
- 
-            contentItem.Write(rawDir);
 
+            //
+            // *** An attempt to catch some of these illusive errors
+            //
+            catch(Exception e)
+            {
+                exceptionCount++;
+                UpdateStatusText_DebugTab();
+
+                DebugOut("---------- Critical Exception ---------------- ");
+                DebugOut("Exception time: ", DateTime.Now.ToString());
+
+                String docContentId = "0";
+                try
+                {
+                    docContentId = this.GetDocShortId(node);
+                    DebugOut("mtpsNode.targetLocale: ", mtpsNode.targetLocale);
+                    DebugOut("docContentId: ", docContentId);
+                    DebugOut("mtpsNode.targetVersion: ", mtpsNode.targetVersion);
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    DebugOut("Node.Text: ", node.Text);
+                    DebugOut("Debug Point: ", sdebug);
+                    DebugOut("e.Message: ", e.Message);
+                    DebugOut("e.StackTrace: ", e.StackTrace);
+                    DebugOut("e.Source: ", e.Source);
+                    DebugOut("e.ToString: ", e.ToString());
+
+                    String url;
+                    if (rootContentItem.msdnSelected)
+                        url = String.Format("http://msdn.microsoft.com/{0}/library/{1}({2}).aspx", mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion);
+                    else
+                        url = String.Format("http://technet.microsoft.com/{0}/library/{1}({2}).aspx", mtpsNode.targetLocale, docContentId, mtpsNode.targetVersion);
+                    DebugOut("URL: ", url);
+                }
+                catch
+                {
+                }
+
+            }
             return true;
-
-            
         }
 
 
@@ -424,7 +515,7 @@ namespace PackageThis
                         }
                         contentDataSet.Tables["Item"].Rows.Remove(parentRow);
                     }
-
+                    UpdateStatusText_ListTab(contentDataSet);
                 }
 
             }
@@ -441,9 +532,11 @@ namespace PackageThis
             progressForm.ShowDialog();
 
         }
-        public void CreateMshc(string MshcFile, string locale, Content contentDataSet, string VendorName, string ProdName, string BookName)
+        public void CreateMshc(string MshcFile, string locale, Content contentDataSet, string VendorName, string ProdName, string BookName,
+            string RootTopicSuffix, string RootTopicParent, bool fTopicVersion, string TopicVersion)
         {
-            Mshc mshc = new Mshc(workingDir, MshcFile, locale, tocControl.Nodes, contentDataSet, links, VendorName, ProdName, BookName);
+            Mshc mshc = new Mshc(workingDir, MshcFile, locale, tocControl.Nodes, contentDataSet, links, VendorName, ProdName, BookName,
+                RootTopicSuffix, RootTopicParent, fTopicVersion, TopicVersion);
 
             //Mshc.Create();  //progress now calls this.. See Mshc.Compile()
 
@@ -466,11 +559,49 @@ namespace PackageThis
             hxsProgressForm.ShowDialog();
         }
 
-        
 
-        private void MessageBox()
+        private void DebugOut(String text)
+        {
+            if (_rtDebug != null)
+               _rtDebug.WriteLine(text);
+        }
+
+        private void DebugOut(String text1, String text2)
+        {
+            if (_rtDebug != null)
+                _rtDebug.WriteLine(text1, text2);
+        }
+
+        private void MessageBox_()
         {
             throw new NotImplementedException();
+        }
+
+        String debugTabText = "";
+        String listTabText = "";
+
+        public void UpdateStatusText_DebugTab()
+        {
+            if (_tabPage_Debug != null)
+            {
+                if (debugTabText == "")
+                    debugTabText = _tabPage_Debug.Text;
+                if (exceptionCount > 0)
+                    _tabPage_Debug.Text = debugTabText + " (" + exceptionCount.ToString() + ")";
+            }
+        }
+
+        public void UpdateStatusText_ListTab(Content contentDataSet)
+        {
+            if (_tabPage_List != null && contentDataSet != null)
+            {
+                if (listTabText == "")
+                    listTabText = _tabPage_List.Text;
+                if (contentDataSet.Item.Count == 0)
+                    _tabPage_List.Text = listTabText;
+                else
+                    _tabPage_List.Text = listTabText + " (" + contentDataSet.Item.Count.ToString() + ")";
+            }
         }
 
 

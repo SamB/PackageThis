@@ -22,14 +22,17 @@ namespace PackageThis
 {
     class Mshc : ICompilable
     {
-
         //private bool Disposed;
-        private string NewMshcDir;
+        private string newMshcDir;
         private string rawDir;
-        private string VendorName;
-        private string ProdName;
-        private string BookName;
-        private string MshcFile;
+        private string vendorName;
+        private string prodName;
+        private string nookName;
+        private string rootTopicSuffix;
+        private string rootTopicParent;
+        private bool fTopicVersion;
+        private string topicVersion;
+        private string mshcFile;
         private string packageName;
         private string locale;
         private Content contentDataSet;
@@ -37,9 +40,6 @@ namespace PackageThis
         private Dictionary<string, string> links;
 
         private IProgressReporter progressReporter = null;
-
-        //Set to "-1" to not create an artificial root node
-        private String PackageThisRootID = "PackageThisRootID";   //The name "PackageThisRootID" is used by H3Viewer.exe so do not change (apart from to "-1")
 
         public int expectedLines = 1;
 
@@ -50,22 +50,24 @@ namespace PackageThis
         private const string PackageRelationshipType = @"http://schemas.microsoft.com/opc/2006/sample/document";
         private const string ResourceRelationshipType = @"http://schemas.microsoft.com/opc/2006/sample/required-resource";
 
-
-
-
         public Mshc(string workingDir, string mshcFile, string locale, TreeNodeCollection nodes,
-            Content contentDataSet, Dictionary<string, string> links, string VendorName, string ProdName, string BookName)
+            Content contentDataSet, Dictionary<string, string> links, string VendorName, string ProdName, string BookName,
+            string RootTopicSuffix, string RootTopicParent, bool fTopicVersion, string TopicVersion)
         {
-            this.MshcFile = mshcFile;
-            this.NewMshcDir = Path.GetDirectoryName(mshcFile);
+            this.mshcFile = mshcFile;
+            this.newMshcDir = Path.GetDirectoryName(mshcFile);
             this.locale = locale;
             this.nodes = nodes;
             this.contentDataSet = contentDataSet;
             this.links = links;
-            this.VendorName = VendorName;
-            this.ProdName = ProdName;
-            this.BookName = BookName;
-            this.packageName = Path.GetFileNameWithoutExtension(this.MshcFile);
+            this.vendorName = VendorName.Trim();
+            this.prodName = ProdName.Trim();
+            this.nookName = BookName.Trim();
+            this.rootTopicSuffix = RootTopicSuffix;
+            this.rootTopicParent = RootTopicParent.Trim();
+            this.fTopicVersion = fTopicVersion;
+            this.topicVersion = TopicVersion.Trim();
+            this.packageName = Path.GetFileNameWithoutExtension(this.mshcFile);
             this.expectedLines = contentDataSet.Tables["Item"].Rows.Count + 1;
 
             this.rawDir = Path.Combine(workingDir, "raw");
@@ -76,8 +78,6 @@ namespace PackageThis
                 xform.Load(transformFile);
             }
         }
-
-
 
         private string GetTocParent(TreeNodeCollection nodes, string currentAssetId)   
         {
@@ -119,64 +119,6 @@ namespace PackageThis
         }
 
 
-
-        public void MakeArtificialRootFile()
-        {
-            string filename = Path.Combine(rawDir, "PackageThisRoot.htm");
-            if (File.Exists(filename))
-                File.Delete(filename);
-
-            try
-            {
-                StreamWriter writer = new StreamWriter(filename, true, System.Text.Encoding.UTF8);
-
-                writer.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-                writer.WriteLine("<html xmlns=\"http://www.w3.org/1999/xhtml\">");
-                writer.WriteLine("  <head>");
-                writer.WriteLine("    <title>Package This</title>");
-                writer.WriteLine("    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />");
-                writer.WriteLine("    <meta name=\"save\" content=\"history\" />");
-                writer.WriteLine("    <meta name=\"ROBOTS\" content=\"NOINDEX, NOFOLLOW\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.TopicLocale\" content=\"" + locale + "\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.Locale\" content=\"" + locale + "\" />");
-                writer.WriteLine("    <meta name=\"Language\" content=\"" + locale + "\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.Package\" content=\"PackageThis\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.Id\" content=\"" + PackageThisRootID + "\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.F1\" content=\"PackageThis\" />");
-                writer.WriteLine("    <meta name=\"System.Keywords\" content=\"Package This\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.TocParent\" content=\"-1\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.TocOrder\" content=\"1\" />");
-                writer.WriteLine("    <meta name=\"Microsoft.Help.TopicVersion\" content=\"100\" />");
-                writer.WriteLine("    <meta name=\"SelfBranded\" content=\"false\" />");
-                writer.WriteLine("  </head>");
-                writer.WriteLine("  <body>");
-                writer.WriteLine("    <div class=\"Package This\" xmlns=\"\">");
-                writer.WriteLine("      <!--*-->");
-                writer.WriteLine("    </div>");
-                writer.WriteLine("    <div class=\"title\" xmlns=\"\">Package This</div>");
-                writer.WriteLine("    <div id=\"mainSection\" xmlns=\"\">");
-                writer.WriteLine("      <div id=\"mainBody\">");
-                writer.WriteLine("          <p>PackageThis Web site: <a href=\"http://packagethis.codeplex.com/\" target=\"_blank\">packagethis.codeplex.com</a></p>");
-                writer.WriteLine("          <p>Produced by PackageThis Version " + Assembly.GetExecutingAssembly().GetName().Version.ToString() + "</p>");
-                writer.WriteLine("      </div>");
-                writer.WriteLine("    </div>");
-                writer.WriteLine("  </body>");
-                writer.WriteLine("</html>");
-
-                writer.Flush();
-                // Free resources
-                writer.Close();
-                writer = null;
-                GC.SuppressFinalize(this);
-
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-
         // Compile() is called by a background Thread in ProgressForm so be carful
 
         void ICompilable.Compile(IProgressReporter progressReporter)  //Called by Progress form
@@ -187,7 +129,7 @@ namespace PackageThis
 
         private void Create()
         {
-            Directory.CreateDirectory(NewMshcDir);
+            Directory.CreateDirectory(newMshcDir);
 
             this.progressReporter.ProgressMessage("!Creating all files...");   // ! = Reset progress bar
 
@@ -199,18 +141,23 @@ namespace PackageThis
                 //if (Int32.Parse(row["Size"].ToString()) != 0)
                 {
                     string tocParent = GetTocParent(nodes, row["AssetId"].ToString());
-                    if (tocParent == "-1")
-                        tocParent = PackageThisRootID;
+                    if (tocParent == "-1" && this.rootTopicParent != "")
+                        tocParent = this.rootTopicParent;  //Users prefered parent
 
                     if (DownloadMtps.DownloadOfflineFileAndSave(
                         row["ContentId"].ToString(),
                         row["AssetId"].ToString(),
                         row["VersionId"].ToString(),
+                        row["Title"].ToString(),
                         tocParent,
                         n.ToString(),
                         this.rawDir,
                         this.locale,
-                        this.packageName
+                        this.packageName,
+                        this.rootTopicSuffix,
+                        this.rootTopicParent,
+                        this.fTopicVersion, 
+                        this.topicVersion
                         ))                         // toc order
                     {
                            //Downloaded and saved successfully!
@@ -235,20 +182,17 @@ namespace PackageThis
 
             //====================================== Zip It!
 
-            if (File.Exists(this.MshcFile))
-                File.Delete(this.MshcFile);
+            if (File.Exists(this.mshcFile))
+                File.Delete(this.mshcFile);
 
 
             this.progressReporter.ProgressMessage("!Compressing files...");   // ! = Reset progress bar
 
             // Create artificial super parent
 
-            if (PackageThisRootID != "-1")
-                MakeArtificialRootFile();
-
             // Zip all to .mshc file
 
-            using (Package package = Package.Open(this.MshcFile, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            using (Package package = Package.Open(this.mshcFile, FileMode.OpenOrCreate, FileAccess.ReadWrite))
             {
                 foreach (string file in Directory.GetFiles(rawDir))
                 {
@@ -354,9 +298,9 @@ namespace PackageThis
             
             int codePage = new CultureInfo(locale).TextInfo.ANSICodePage;
             Encoding encoding = Encoding.GetEncoding(codePage);
-            string VN = this.VendorName;
-            string PN = this.ProdName;
-            string BN = this.BookName;
+            string VN = this.vendorName;
+            string PN = this.prodName;
+            string BN = this.nookName;
 
             if (VN.Equals("Microsoft", StringComparison.OrdinalIgnoreCase))   //rwc: "Microsoft" will cause install to fail (MS expect a CAB install)
             {
@@ -375,13 +319,19 @@ namespace PackageThis
                 BN = "PackageThis2";
             }
 
-            string metaFile = Path.Combine(NewMshcDir, "HelpContentSetup.msha");
-            if (File.Exists(metaFile))
-                File.Delete(metaFile);
+            // meta file -- also create a HV 1.0 meta file incase it's needed
+            string mshaPath1 = Path.Combine(newMshcDir, Path.GetFileNameWithoutExtension(this.mshcFile) + ".msha");
+            string mshaPath2 = Path.Combine(newMshcDir, "HelpContentSetup.msha");          // name required by HV 1.0
+
+            // delete meta file targets
+            if (File.Exists(mshaPath1))
+                File.Delete(mshaPath1);
+            if (File.Exists(mshaPath2))
+                File.Delete(mshaPath2);
 
             try
             {
-                StreamWriter writer = new StreamWriter(metaFile, true, System.Text.Encoding.UTF8);
+                StreamWriter writer = new StreamWriter(mshaPath1, true, System.Text.Encoding.UTF8);
 
                 writer.WriteLine("<html xmlns=\""+"http://www.w3.org/1999/xhtml"+"\">");
 
@@ -407,13 +357,14 @@ namespace PackageThis
 
                 writer.WriteLine("</body>");
                 writer.WriteLine("</html>");
-
                 writer.Flush();
                 // Free resources
                 writer.Close();
                 writer = null;
                 GC.SuppressFinalize(this);
 
+                //Copy file1 to file2 -- Then user can have a choice of .msha file
+                File.Copy(mshaPath1, mshaPath2);
             }
             catch (Exception ex)
             {
@@ -492,7 +443,7 @@ namespace PackageThis
                     xform.Transform(xr2, arguments, sw2);
 
                 }
-                catch (Exception ex)
+                catch //(Exception ex)
                 {
                     return;
                 }
@@ -531,8 +482,8 @@ namespace PackageThis
               ....  
          *  
          */
-        public static Boolean DownloadOfflineFileAndSave(string contentId, string assetId, string versionId, string tocParent, 
-            string tocOrder, string rawdir_, string locale, string packageName)
+        public static Boolean DownloadOfflineFileAndSave(string contentId, string assetId, string versionId, string rowTitle, string tocParent,
+            string tocOrder, string rawdir_, string locale, string packageName, string rootTopicSuffix, string rootTopicParent, bool fTopicVersion, string topicVersion)
         {
             rawDir = rawdir_;
 
@@ -587,6 +538,9 @@ namespace PackageThis
                         XmlNode nodeTocParent = null;
                         XmlNode nodeTocOrder = null;
                         XmlNode nodePackage = null;
+                        XmlNode nodeTopicVersion = null;
+                        XmlNode nodeTitle = null;
+                        String title_InnerText = "";
 
                         foreach (XmlNode node in headNodes[0].ChildNodes)
                         {
@@ -603,11 +557,16 @@ namespace PackageThis
                                     nodeTocOrder = node;
                                 else if (node.Attributes[0].Value == "Microsoft.Help.Package")
                                     nodePackage = node;
+                                else if (node.Attributes[0].Value == "Microsoft.Help.TopicVersion")
+                                    nodeTopicVersion = node;
+                            }
+                            else if (node.Name == "title")
+                            {
+                                nodeTitle = node;
+                                if (node.InnerText != "")
+                                    title_InnerText = node.InnerText;
                             }
                         }
-
-                        if (nodeId == null)  //unlikely -- There should always be an ID 
-                            return false;
 
                         // Mods...
 
@@ -616,7 +575,25 @@ namespace PackageThis
                         XmlElement elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);   //add root element NamespaceUri to suppress unwanted xmlns="" attribute
                         elem.SetAttribute("name", "Microsoft.Help.Id");
                         elem.SetAttribute("content", assetId);
-                        headNodes[0].ReplaceChild(elem, nodeId);
+                        if (nodeId == null)  // Unlikely ID wont be found
+                            nodeId = headNodes[0].AppendChild(elem);
+                        else
+                            headNodes[0].ReplaceChild(elem, nodeId);
+
+                        // Adjust root topic title so we can find it easier
+
+                        //Make sure title is there
+
+                        elem = xmldoc.CreateElement("title", xmldoc.DocumentElement.NamespaceURI);   //add root element NamespaceUri to suppress unwanted xmlns="" attribute
+                        if (title_InnerText == "")
+                            title_InnerText = rowTitle;  //use title from the 
+                        if (tocParent == "-1" || tocParent == rootTopicParent)
+                            title_InnerText = title_InnerText + rootTopicSuffix;  // Mark the root topic so we can find it in the TOC
+                        elem.InnerText = title_InnerText;
+                        if (nodeTitle == null)  // Unlikely title wont be found
+                            nodeTitle = headNodes[0].AppendChild(elem);
+                        else
+                            headNodes[0].ReplaceChild(elem, nodeTitle);
 
                         // Add or Replace TocParent meta tag <meta name="Microsoft.Help.TocParent" content="xxxxx" /> 
 
@@ -648,7 +625,18 @@ namespace PackageThis
                         else
                             headNodes[0].ReplaceChild(elem, nodePackage);
 
+                        // Add or Replace TopicVersion meta tag <meta name="Microsoft.Help.TopicVersion" content="110" /> 
 
+                        if (fTopicVersion)
+                        {
+                            elem = xmldoc.CreateElement("meta", xmldoc.DocumentElement.NamespaceURI);
+                            elem.SetAttribute("name", "Microsoft.Help.TopicVersion");
+                            elem.SetAttribute("content", topicVersion);
+                            if (nodeTopicVersion == null)
+                                nodeTopicVersion = headNodes[0].AppendChild(elem);
+                            else
+                                headNodes[0].ReplaceChild(elem, nodeTopicVersion);
+                        }
 
                         // Fix image links <img src= > -- Guarenteed they will be wrong
                         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

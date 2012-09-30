@@ -361,7 +361,7 @@ namespace PackageThis
                     xform.Transform(xr, arguments, sw);
 
                 }
-                catch (Exception ex)
+                catch //(Exception ex)
                 {
                     return;
                 }

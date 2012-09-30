@@ -21,6 +21,16 @@ namespace PackageThis
             Registry.SetValue(key, valueName, value, RegistryValueKind.String);
         }
 
+        static public bool GetBool(string valueName, bool defaultValue)
+        {
+            return (string)Registry.GetValue(key, valueName, (defaultValue) ? "1" : "0") == "1";
+        }
+
+        static public void SetBool(string valueName, bool value)
+        {
+            Registry.SetValue(key, valueName, (value) ? "1" : "0", RegistryValueKind.String);
+        }
+
 
         /*
          * This was good idea (caching the locale data) and saved 15 sec of load time (Accessing from Australia).

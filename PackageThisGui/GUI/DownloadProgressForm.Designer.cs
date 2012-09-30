@@ -34,17 +34,17 @@ namespace PackageThis
             this.RequestCancelButton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.TitleLabel = new System.Windows.Forms.Label();
             this.SizeLabel = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.FilesLabel = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.DownloadLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // RequestCancelButton
             // 
             this.RequestCancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.RequestCancelButton.Location = new System.Drawing.Point(251, 59);
+            this.RequestCancelButton.Location = new System.Drawing.Point(254, 75);
             this.RequestCancelButton.Name = "RequestCancelButton";
             this.RequestCancelButton.Size = new System.Drawing.Size(75, 23);
             this.RequestCancelButton.TabIndex = 0;
@@ -64,25 +64,16 @@ namespace PackageThis
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(344, 30);
+            this.label3.Location = new System.Drawing.Point(49, 54);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(57, 13);
             this.label3.TabIndex = 3;
             this.label3.Text = "Total Size:";
             // 
-            // TitleLabel
-            // 
-            this.TitleLabel.AutoEllipsis = true;
-            this.TitleLabel.AutoSize = true;
-            this.TitleLabel.Location = new System.Drawing.Point(112, 9);
-            this.TitleLabel.Name = "TitleLabel";
-            this.TitleLabel.Size = new System.Drawing.Size(0, 13);
-            this.TitleLabel.TabIndex = 4;
-            // 
             // SizeLabel
             // 
             this.SizeLabel.AutoSize = true;
-            this.SizeLabel.Location = new System.Drawing.Point(407, 30);
+            this.SizeLabel.Location = new System.Drawing.Point(112, 54);
             this.SizeLabel.Name = "SizeLabel";
             this.SizeLabel.Size = new System.Drawing.Size(0, 13);
             this.SizeLabel.TabIndex = 5;
@@ -106,17 +97,26 @@ namespace PackageThis
             // 
             // timer1
             // 
+            this.timer1.Interval = 10;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            // 
+            // DownloadLabel
+            // 
+            this.DownloadLabel.AutoSize = true;
+            this.DownloadLabel.Location = new System.Drawing.Point(112, 9);
+            this.DownloadLabel.Name = "DownloadLabel";
+            this.DownloadLabel.Size = new System.Drawing.Size(0, 13);
+            this.DownloadLabel.TabIndex = 8;
             // 
             // DownloadProgressForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(586, 94);
+            this.ClientSize = new System.Drawing.Size(586, 110);
+            this.Controls.Add(this.DownloadLabel);
             this.Controls.Add(this.FilesLabel);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.SizeLabel);
-            this.Controls.Add(this.TitleLabel);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.RequestCancelButton);
@@ -143,5 +143,6 @@ namespace PackageThis
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label FilesLabel;
         private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Label DownloadLabel;
     }
 }

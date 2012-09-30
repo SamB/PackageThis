@@ -29,13 +29,13 @@ namespace PackageThis
             InitializeComponent();
 
             timer1.Enabled = true;
-
         }
 
 
         public string convertToBinaryPrefixed(ulong value)
         {
-            string[] conversionTable = { "", "bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB" };
+            //string[] conversionTable = { "", "bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB" };  //http://en.wikipedia.org/wiki/Kibibyte
+            string[] conversionTable = { "", "bytes", "KB", "MB", "GB", "TB", "PB", "EB" };  //In Windows when we see KB we assume KiB (especially we programmers do)
 
             int i = 0;
             ulong previousValue = value;
@@ -60,15 +60,15 @@ namespace PackageThis
                 return;
             }
 
-            node.Expand();
+            node.Expand();                    //This triggers the node expand event and gets the child nodes
             
             if(node.Checked == false)
-                node.Checked = true;
+                node.Checked = true;          //This triggers the node check event and downloads the page
 
             if (node.Tag != null)
             {
                 MtpsNode mtpsNode = node.Tag as MtpsNode;
-                TitleLabel.Text = mtpsNode.title;
+                DownloadLabel.Text = mtpsNode.title;
 
                 DataRow row = contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId);
 
@@ -116,7 +116,6 @@ namespace PackageThis
         {
             timer1.Enabled = false;
         }
-
 
 
 

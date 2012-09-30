@@ -48,6 +48,14 @@ namespace ContentServiceLibrary
                 }
             }
 
+            static public bool msdnSelected
+            {
+                get
+                {
+                    return contentIds[currentLibrary] == "ms310241";
+                }
+            }
+
             
         }
 
