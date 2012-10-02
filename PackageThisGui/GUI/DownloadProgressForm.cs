@@ -7,17 +7,22 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using System.Globalization;
 
 namespace PackageThis
 {
     public partial class DownloadProgressForm : Form
     {
         private ulong downloadSize;
+        private ulong downloadSizeIncudingImages; 
         private int filesDownloaded;
+        private ulong filesDownloadedIncudingImages; 
         private TreeNode node;
         private TreeNode startingNode;
         private bool decendingTree;
         private Content contentDataSet;
+
+        CultureInfo _currentCulture = CultureInfo.CurrentCulture;
 
         public DownloadProgressForm(TreeNode node, Content contentDataSet)
         {
@@ -39,6 +44,7 @@ namespace PackageThis
 
             int i = 0;
             ulong previousValue = value;
+            ulong sizeInB = value; 
 
             while (value != 0L)
             {
@@ -47,7 +53,7 @@ namespace PackageThis
                 i++;
             }
 
-            return previousValue.ToString() + " " + conversionTable[i];
+            return previousValue.ToString("N0", _currentCulture) + " " + conversionTable[i] + "  (" + sizeInB.ToString("N0", _currentCulture) + " bytes)";
         }
 
 
@@ -72,13 +78,32 @@ namespace PackageThis
 
                 DataRow row = contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId);
 
-                if (row != null)
-                    downloadSize += (ulong)Int32.Parse(row["Size"].ToString());
+                int topicSize = 0;
+                int picsSize = 0;
+                int picsCount = 0;
+                if (Int32.TryParse(row["Size"].ToString(), out topicSize))
+                    downloadSize += (ulong)topicSize;
+                if (Int32.TryParse(row["SizePictures"].ToString(), out picsSize))
+                    downloadSizeIncudingImages = downloadSizeIncudingImages + (ulong)picsSize + (ulong)topicSize;  //size of topic + images
+                if (Int32.TryParse(row["Pictures"].ToString(), out picsCount))
+                    filesDownloadedIncudingImages += (ulong)picsCount + 1;  // +1 for topic
 
                 filesDownloaded += 1;
 
-                FilesLabel.Text = filesDownloaded.ToString();
+                FilesLabel.Text = filesDownloaded.ToString("N0", _currentCulture);
+                TotalFilesLabel.Text = filesDownloadedIncudingImages.ToString("N0", _currentCulture);
                 SizeLabel.Text = convertToBinaryPrefixed(downloadSize);
+                TotalSizeLabel.Text = convertToBinaryPrefixed(downloadSizeIncudingImages);
+
+                //warning .. Exceeded safe download limit
+                if (filesDownloadedIncudingImages > 10000 && toolStripStatusLabel1.Tag == null)
+                {
+                    toolStripStatusLabel1.Tag = 1;
+                    toolStripStatusLabel1.Text = "Warning: Creating packages > 10,000 files is not recommended. Try making several smaller files.";
+                    toolStripStatusLabel1.ForeColor = Color.White;
+                    toolStripStatusLabel1.BackColor = Color.Red;
+                    statusStrip1.BackColor = Color.Red;
+                }
             }
 
             if (decendingTree == true && node.FirstNode != null)
@@ -116,6 +141,7 @@ namespace PackageThis
         {
             timer1.Enabled = false;
         }
+
 
 
 

@@ -280,6 +280,8 @@ namespace PackageThis
 
         private void selectNodeAndChildrenToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (TOCTreeView.SelectedNode == null)
+                return;
             useWaitCursor = false;  //Don't need a wait corsor as we have a modal dialog
             try
             {
@@ -298,6 +300,8 @@ namespace PackageThis
         //Expand all sub nodes
         private void expandSiblingNodesToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (TOCTreeView.SelectedNode == null)
+                return;
             useWaitCursor = false;  //Don't need a wait corsor as we have a modal dialog
             try
             {
@@ -586,6 +590,10 @@ namespace PackageThis
             _lastTreeNodeSelected = TOCTreeView.SelectedNode;
             if (tabControl1.SelectedTab == tabPage_Online)
                 ViewSelectedInOnlineTab();
+
+            toolStripButton_DownloadAll.Enabled = _lastTreeNodeSelected != null;
+            toolStripButton_RemoveAll.Enabled = _lastTreeNodeSelected != null;
+            toolStripButton_ExpandAll.Enabled = _lastTreeNodeSelected != null;
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
@@ -593,6 +601,27 @@ namespace PackageThis
             if (tabControl1.SelectedTab == tabPage_Online)
                 ViewSelectedInOnlineTab();
         }
+
+
+        // Toolbar 
+
+        private void toolStripButton_DownloadAll_Click(object sender, EventArgs e)
+        {
+            selectNodeAndChildrenToolStripMenuItem_Click(sender, e);
+        }
+
+        private void toolStripButton_RemoveAll_Click(object sender, EventArgs e)
+        {
+            if (TOCTreeView.SelectedNode != null)
+                appController.UncheckNodes(TOCTreeView.SelectedNode);
+        }
+
+        private void toolStripButton_ExpandAll_Click(object sender, EventArgs e)
+        {
+            expandSiblingNodesToolStripMenuItem_Click(sender, e);
+        }
+
+
 
 
 

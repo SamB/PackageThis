@@ -68,6 +68,7 @@ namespace ContentServiceLibrary
         public string toc;
         public string contentId;
         public int numImages;
+        public int sizeImages;
         public string links;
         public string application;
 
@@ -254,7 +255,7 @@ namespace ContentServiceLibrary
             //if (string.IsNullOrEmpty(annotations) == true)
                 annotations = "<an:annotations xmlns:an=\"urn:mtpg-com:mtps/2007/1/annotations\" />";
 
-
+            sizeImages = 0;
             if (loadImages == true)
             {
                 requestedDocument[] imageDocs = new requestedDocument[response.imageDocuments.Length];
@@ -277,7 +278,7 @@ namespace ContentServiceLibrary
                     if (validateAsFilename.Match(imageFilename).Success == true)
                     {
                         images.Add(new Image(imageDoc.name, imageDoc.imageFormat, imageDoc.Value));
-
+                        sizeImages = sizeImages + imageDoc.Value.Length;
                     }
                     else
                     {

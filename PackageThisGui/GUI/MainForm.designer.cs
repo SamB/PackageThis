@@ -71,6 +71,7 @@ namespace PackageThis
             this.contentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.indexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.searchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuTutorial = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
@@ -80,6 +81,8 @@ namespace PackageThis
             this.selectSiblingNodesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.deselectThisNodeAndAllChildrenToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            this.expandSiblingNodesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
             this.gotoWebPage_toolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gotoMtpsPage_toolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showTocMTPSPageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -96,13 +99,17 @@ namespace PackageThis
             this.ContentDataSet = new PackageThis.Content();
             this.tabPage_Online = new System.Windows.Forms.TabPage();
             this.webBrowser1 = new System.Windows.Forms.WebBrowser();
-            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
-            this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.expandSiblingNodesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
             this.tabPage_Debug = new System.Windows.Forms.TabPage();
             this.debugEdit = new System.Windows.Forms.RichTextBox();
-            this.toolStripMenuTutorial = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.SizePictures = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.toolStripButton_DownloadAll = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton_RemoveAll = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton_ExpandAll = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripSeparator12 = new System.Windows.Forms.ToolStripSeparator();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -116,10 +123,12 @@ namespace PackageThis
             ((System.ComponentModel.ISupportInitialize)(this.ContentDataSet)).BeginInit();
             this.tabPage_Online.SuspendLayout();
             this.tabPage_Debug.SuspendLayout();
+            this.toolStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip1
             // 
+            this.menuStrip1.BackColor = System.Drawing.SystemColors.ButtonFace;
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
             this.editToolStripMenuItem,
@@ -465,6 +474,13 @@ namespace PackageThis
             this.searchToolStripMenuItem.Text = "&Search";
             this.searchToolStripMenuItem.Visible = false;
             // 
+            // toolStripMenuTutorial
+            // 
+            this.toolStripMenuTutorial.Name = "toolStripMenuTutorial";
+            this.toolStripMenuTutorial.Size = new System.Drawing.Size(195, 22);
+            this.toolStripMenuTutorial.Text = "Tutorial";
+            this.toolStripMenuTutorial.Click += new System.EventHandler(this.toolStripMenuTutorial_Click);
+            // 
             // toolStripSeparator5
             // 
             this.toolStripSeparator5.Name = "toolStripSeparator5";
@@ -487,8 +503,9 @@ namespace PackageThis
             // 
             // splitContainer1
             // 
+            this.splitContainer1.BackColor = System.Drawing.SystemColors.Control;
             this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 24);
+            this.splitContainer1.Location = new System.Drawing.Point(0, 57);
             this.splitContainer1.Name = "splitContainer1";
             // 
             // splitContainer1.Panel1
@@ -497,13 +514,15 @@ namespace PackageThis
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.BackColor = System.Drawing.SystemColors.Control;
             this.splitContainer1.Panel2.Controls.Add(this.tabControl1);
-            this.splitContainer1.Size = new System.Drawing.Size(1035, 578);
+            this.splitContainer1.Size = new System.Drawing.Size(1035, 545);
             this.splitContainer1.SplitterDistance = 343;
             this.splitContainer1.TabIndex = 2;
             // 
             // TOCTreeView
             // 
+            this.TOCTreeView.BackColor = System.Drawing.Color.White;
             this.TOCTreeView.CheckBoxes = true;
             this.TOCTreeView.ContextMenuStrip = this.TreeViewMenu;
             this.TOCTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -511,7 +530,7 @@ namespace PackageThis
             this.TOCTreeView.HideSelection = false;
             this.TOCTreeView.Location = new System.Drawing.Point(0, 0);
             this.TOCTreeView.Name = "TOCTreeView";
-            this.TOCTreeView.Size = new System.Drawing.Size(343, 578);
+            this.TOCTreeView.Size = new System.Drawing.Size(343, 545);
             this.TOCTreeView.TabIndex = 0;
             this.toolTip1.SetToolTip(this.TOCTreeView, "Nodes in red are not available in the content service.");
             this.TOCTreeView.BeforeCheck += new System.Windows.Forms.TreeViewCancelEventHandler(this.TOCTreeView_BeforeCheck);
@@ -531,35 +550,52 @@ namespace PackageThis
             this.gotoMtpsPage_toolStripMenuItem,
             this.showTocMTPSPageToolStripMenuItem});
             this.TreeViewMenu.Name = "TreeViewMenu";
-            this.TreeViewMenu.Size = new System.Drawing.Size(264, 148);
+            this.TreeViewMenu.Size = new System.Drawing.Size(187, 148);
             // 
             // selectSiblingNodesToolStripMenuItem
             // 
             this.selectSiblingNodesToolStripMenuItem.AutoToolTip = true;
+            this.selectSiblingNodesToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("selectSiblingNodesToolStripMenuItem.Image")));
             this.selectSiblingNodesToolStripMenuItem.Name = "selectSiblingNodesToolStripMenuItem";
-            this.selectSiblingNodesToolStripMenuItem.Size = new System.Drawing.Size(263, 22);
-            this.selectSiblingNodesToolStripMenuItem.Text = "Select This Node and All Children...";
-            this.selectSiblingNodesToolStripMenuItem.ToolTipText = "Check (and download) all sub items";
+            this.selectSiblingNodesToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.selectSiblingNodesToolStripMenuItem.Text = "Download All";
+            this.selectSiblingNodesToolStripMenuItem.ToolTipText = "Download (& check) selected item and all sub items";
             this.selectSiblingNodesToolStripMenuItem.Click += new System.EventHandler(this.selectNodeAndChildrenToolStripMenuItem_Click);
             // 
             // deselectThisNodeAndAllChildrenToolStripMenuItem
             // 
             this.deselectThisNodeAndAllChildrenToolStripMenuItem.AutoToolTip = true;
+            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("deselectThisNodeAndAllChildrenToolStripMenuItem.Image")));
             this.deselectThisNodeAndAllChildrenToolStripMenuItem.Name = "deselectThisNodeAndAllChildrenToolStripMenuItem";
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Size = new System.Drawing.Size(263, 22);
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Text = "Deselect This Node and All Children";
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.ToolTipText = "Uncheck (and remove) all sub items";
+            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Text = "Remove All";
+            this.deselectThisNodeAndAllChildrenToolStripMenuItem.ToolTipText = "Remove download (& uncheck) item and all sub items";
             this.deselectThisNodeAndAllChildrenToolStripMenuItem.Click += new System.EventHandler(this.deselectThisNodeAndAllChildrenToolStripMenuItem_Click);
             // 
             // toolStripSeparator8
             // 
             this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(260, 6);
+            this.toolStripSeparator8.Size = new System.Drawing.Size(183, 6);
+            // 
+            // expandSiblingNodesToolStripMenuItem
+            // 
+            this.expandSiblingNodesToolStripMenuItem.AutoToolTip = true;
+            this.expandSiblingNodesToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("expandSiblingNodesToolStripMenuItem.Image")));
+            this.expandSiblingNodesToolStripMenuItem.Name = "expandSiblingNodesToolStripMenuItem";
+            this.expandSiblingNodesToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.expandSiblingNodesToolStripMenuItem.Text = "Expand All";
+            this.expandSiblingNodesToolStripMenuItem.ToolTipText = "Expand TOC Branch (no downloads)";
+            this.expandSiblingNodesToolStripMenuItem.Click += new System.EventHandler(this.expandSiblingNodesToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator10
+            // 
+            this.toolStripSeparator10.Name = "toolStripSeparator10";
+            this.toolStripSeparator10.Size = new System.Drawing.Size(183, 6);
             // 
             // gotoWebPage_toolStripMenuItem
             // 
             this.gotoWebPage_toolStripMenuItem.Name = "gotoWebPage_toolStripMenuItem";
-            this.gotoWebPage_toolStripMenuItem.Size = new System.Drawing.Size(263, 22);
+            this.gotoWebPage_toolStripMenuItem.Size = new System.Drawing.Size(186, 22);
             this.gotoWebPage_toolStripMenuItem.Text = "View Web Page";
             this.gotoWebPage_toolStripMenuItem.ToolTipText = "Show associated web page in browser";
             this.gotoWebPage_toolStripMenuItem.Click += new System.EventHandler(this.gotoWebPage_toolStripMenuItem_Click);
@@ -567,7 +603,7 @@ namespace PackageThis
             // gotoMtpsPage_toolStripMenuItem
             // 
             this.gotoMtpsPage_toolStripMenuItem.Name = "gotoMtpsPage_toolStripMenuItem";
-            this.gotoMtpsPage_toolStripMenuItem.Size = new System.Drawing.Size(263, 22);
+            this.gotoMtpsPage_toolStripMenuItem.Size = new System.Drawing.Size(186, 22);
             this.gotoMtpsPage_toolStripMenuItem.Text = "View Doc MTPS Page";
             this.gotoMtpsPage_toolStripMenuItem.ToolTipText = "Show MTPS (MSDN/TechNet Publishing System) document page in browser";
             this.gotoMtpsPage_toolStripMenuItem.Click += new System.EventHandler(this.gotoMtpsPage_toolStripMenuItem_Click);
@@ -575,7 +611,7 @@ namespace PackageThis
             // showTocMTPSPageToolStripMenuItem
             // 
             this.showTocMTPSPageToolStripMenuItem.Name = "showTocMTPSPageToolStripMenuItem";
-            this.showTocMTPSPageToolStripMenuItem.Size = new System.Drawing.Size(263, 22);
+            this.showTocMTPSPageToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
             this.showTocMTPSPageToolStripMenuItem.Text = "View Toc MTPS Page";
             this.showTocMTPSPageToolStripMenuItem.ToolTipText = "Show MTPS (MSDN/TechNet Publishing System) toc item page in browser";
             this.showTocMTPSPageToolStripMenuItem.Click += new System.EventHandler(this.gotoTocMTPSPageToolStripMenuItem_Click);
@@ -590,7 +626,8 @@ namespace PackageThis
             this.tabControl1.Location = new System.Drawing.Point(0, 0);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(688, 578);
+            this.tabControl1.ShowToolTips = true;
+            this.tabControl1.Size = new System.Drawing.Size(688, 545);
             this.tabControl1.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.tabControl1.TabIndex = 1;
             this.tabControl1.SelectedIndexChanged += new System.EventHandler(this.tabControl1_SelectedIndexChanged);
@@ -601,9 +638,10 @@ namespace PackageThis
             this.tabPage_List.Location = new System.Drawing.Point(4, 22);
             this.tabPage_List.Name = "tabPage_List";
             this.tabPage_List.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage_List.Size = new System.Drawing.Size(680, 552);
+            this.tabPage_List.Size = new System.Drawing.Size(680, 519);
             this.tabPage_List.TabIndex = 0;
             this.tabPage_List.Text = "Topics";
+            this.toolTip1.SetToolTip(this.tabPage_List, "List of topics downloaded and ready to package");
             this.tabPage_List.UseVisualStyleBackColor = true;
             // 
             // DocsGrid
@@ -622,7 +660,8 @@ namespace PackageThis
             this.versionIdDataGridViewTextBoxColumn,
             this.assetIdDataGridViewTextBoxColumn,
             this.picturesDataGridViewTextBoxColumn,
-            this.sizeDataGridViewTextBoxColumn});
+            this.sizeDataGridViewTextBoxColumn,
+            this.SizePictures});
             this.DocsGrid.DataSource = this.itemsBindingSource;
             this.DocsGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this.DocsGrid.Location = new System.Drawing.Point(3, 3);
@@ -630,7 +669,7 @@ namespace PackageThis
             this.DocsGrid.ReadOnly = true;
             this.DocsGrid.RowHeadersVisible = false;
             this.DocsGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.DocsGrid.Size = new System.Drawing.Size(674, 546);
+            this.DocsGrid.Size = new System.Drawing.Size(674, 513);
             this.DocsGrid.TabIndex = 0;
             // 
             // contentIdDataGridViewTextBoxColumn
@@ -697,7 +736,7 @@ namespace PackageThis
             this.tabPage_Online.Location = new System.Drawing.Point(4, 22);
             this.tabPage_Online.Name = "tabPage_Online";
             this.tabPage_Online.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage_Online.Size = new System.Drawing.Size(680, 552);
+            this.tabPage_Online.Size = new System.Drawing.Size(680, 519);
             this.tabPage_Online.TabIndex = 1;
             this.tabPage_Online.Text = "Online";
             this.tabPage_Online.UseVisualStyleBackColor = true;
@@ -708,8 +747,30 @@ namespace PackageThis
             this.webBrowser1.Location = new System.Drawing.Point(3, 3);
             this.webBrowser1.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowser1.Name = "webBrowser1";
-            this.webBrowser1.Size = new System.Drawing.Size(674, 546);
+            this.webBrowser1.Size = new System.Drawing.Size(674, 513);
             this.webBrowser1.TabIndex = 0;
+            this.toolTip1.SetToolTip(this.webBrowser1, "Online page of selected node");
+            // 
+            // tabPage_Debug
+            // 
+            this.tabPage_Debug.Controls.Add(this.debugEdit);
+            this.tabPage_Debug.Location = new System.Drawing.Point(4, 22);
+            this.tabPage_Debug.Name = "tabPage_Debug";
+            this.tabPage_Debug.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage_Debug.Size = new System.Drawing.Size(680, 519);
+            this.tabPage_Debug.TabIndex = 2;
+            this.tabPage_Debug.Text = "Debug";
+            this.tabPage_Debug.UseVisualStyleBackColor = true;
+            // 
+            // debugEdit
+            // 
+            this.debugEdit.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.debugEdit.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.debugEdit.Location = new System.Drawing.Point(3, 3);
+            this.debugEdit.Name = "debugEdit";
+            this.debugEdit.Size = new System.Drawing.Size(674, 513);
+            this.debugEdit.TabIndex = 0;
+            this.debugEdit.Text = "";
             // 
             // toolTip1
             // 
@@ -722,55 +783,84 @@ namespace PackageThis
             this.saveFileDialog1.DefaultExt = "xml";
             this.saveFileDialog1.Filter = "XML files|*.xml";
             // 
-            // expandSiblingNodesToolStripMenuItem
+            // SizePictures
             // 
-            this.expandSiblingNodesToolStripMenuItem.AutoToolTip = true;
-            this.expandSiblingNodesToolStripMenuItem.Name = "expandSiblingNodesToolStripMenuItem";
-            this.expandSiblingNodesToolStripMenuItem.Size = new System.Drawing.Size(263, 22);
-            this.expandSiblingNodesToolStripMenuItem.Text = "Expand This Node and All Children";
-            this.expandSiblingNodesToolStripMenuItem.ToolTipText = "Build TOC only. No file download is done.";
-            this.expandSiblingNodesToolStripMenuItem.Click += new System.EventHandler(this.expandSiblingNodesToolStripMenuItem_Click);
+            this.SizePictures.DataPropertyName = "SizePictures";
+            this.SizePictures.HeaderText = "SizePictures";
+            this.SizePictures.Name = "SizePictures";
+            this.SizePictures.ReadOnly = true;
+            this.SizePictures.Width = 90;
             // 
-            // toolStripSeparator10
+            // toolStrip1
             // 
-            this.toolStripSeparator10.Name = "toolStripSeparator10";
-            this.toolStripSeparator10.Size = new System.Drawing.Size(260, 6);
+            this.toolStrip1.AllowMerge = false;
+            this.toolStrip1.BackColor = System.Drawing.SystemColors.ButtonFace;
+            this.toolStrip1.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
+            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripButton_DownloadAll,
+            this.toolStripButton_RemoveAll,
+            this.toolStripSeparator11,
+            this.toolStripButton_ExpandAll,
+            this.toolStripSeparator12});
+            this.toolStrip1.Location = new System.Drawing.Point(0, 24);
+            this.toolStrip1.Name = "toolStrip1";
+            this.toolStrip1.Padding = new System.Windows.Forms.Padding(8, 1, 1, 1);
+            this.toolStrip1.Size = new System.Drawing.Size(1035, 33);
+            this.toolStrip1.TabIndex = 3;
+            this.toolStrip1.Text = "toolStrip1";
             // 
-            // tabPage_Debug
+            // toolStripButton_DownloadAll
             // 
-            this.tabPage_Debug.Controls.Add(this.debugEdit);
-            this.tabPage_Debug.Location = new System.Drawing.Point(4, 22);
-            this.tabPage_Debug.Name = "tabPage_Debug";
-            this.tabPage_Debug.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage_Debug.Size = new System.Drawing.Size(680, 552);
-            this.tabPage_Debug.TabIndex = 2;
-            this.tabPage_Debug.Text = "Debug";
-            this.tabPage_Debug.UseVisualStyleBackColor = true;
+            this.toolStripButton_DownloadAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_DownloadAll.Image")));
+            this.toolStripButton_DownloadAll.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_DownloadAll.Name = "toolStripButton_DownloadAll";
+            this.toolStripButton_DownloadAll.Padding = new System.Windows.Forms.Padding(4);
+            this.toolStripButton_DownloadAll.Size = new System.Drawing.Size(106, 28);
+            this.toolStripButton_DownloadAll.Text = "Download All";
+            this.toolStripButton_DownloadAll.ToolTipText = "Download (& check) selected item and all sub items";
+            this.toolStripButton_DownloadAll.Click += new System.EventHandler(this.toolStripButton_DownloadAll_Click);
             // 
-            // debugEdit
+            // toolStripButton_RemoveAll
             // 
-            this.debugEdit.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.debugEdit.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.debugEdit.Location = new System.Drawing.Point(3, 3);
-            this.debugEdit.Name = "debugEdit";
-            this.debugEdit.Size = new System.Drawing.Size(674, 546);
-            this.debugEdit.TabIndex = 0;
-            this.debugEdit.Text = "";
+            this.toolStripButton_RemoveAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_RemoveAll.Image")));
+            this.toolStripButton_RemoveAll.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_RemoveAll.Name = "toolStripButton_RemoveAll";
+            this.toolStripButton_RemoveAll.Padding = new System.Windows.Forms.Padding(4);
+            this.toolStripButton_RemoveAll.Size = new System.Drawing.Size(95, 28);
+            this.toolStripButton_RemoveAll.Text = "Remove All";
+            this.toolStripButton_RemoveAll.ToolTipText = "Remove download (& uncheck) item and all sub items";
+            this.toolStripButton_RemoveAll.Click += new System.EventHandler(this.toolStripButton_RemoveAll_Click);
             // 
-            // toolStripMenuTutorial
+            // toolStripButton_ExpandAll
             // 
-            this.toolStripMenuTutorial.Name = "toolStripMenuTutorial";
-            this.toolStripMenuTutorial.Size = new System.Drawing.Size(195, 22);
-            this.toolStripMenuTutorial.Text = "Tutorial";
-            this.toolStripMenuTutorial.Click += new System.EventHandler(this.toolStripMenuTutorial_Click);
+            this.toolStripButton_ExpandAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_ExpandAll.Image")));
+            this.toolStripButton_ExpandAll.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_ExpandAll.Name = "toolStripButton_ExpandAll";
+            this.toolStripButton_ExpandAll.Padding = new System.Windows.Forms.Padding(4);
+            this.toolStripButton_ExpandAll.Size = new System.Drawing.Size(90, 28);
+            this.toolStripButton_ExpandAll.Text = "Expand All";
+            this.toolStripButton_ExpandAll.ToolTipText = "Expand TOC Branch (no downloads)";
+            this.toolStripButton_ExpandAll.Click += new System.EventHandler(this.toolStripButton_ExpandAll_Click);
+            // 
+            // toolStripSeparator11
+            // 
+            this.toolStripSeparator11.Name = "toolStripSeparator11";
+            this.toolStripSeparator11.Size = new System.Drawing.Size(6, 31);
+            // 
+            // toolStripSeparator12
+            // 
+            this.toolStripSeparator12.Name = "toolStripSeparator12";
+            this.toolStripSeparator12.Size = new System.Drawing.Size(6, 31);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.Control;
             this.ClientSize = new System.Drawing.Size(1035, 624);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.statusStrip1);
+            this.Controls.Add(this.toolStrip1);
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
@@ -793,6 +883,8 @@ namespace PackageThis
             ((System.ComponentModel.ISupportInitialize)(this.ContentDataSet)).EndInit();
             this.tabPage_Online.ResumeLayout(false);
             this.tabPage_Debug.ResumeLayout(false);
+            this.toolStrip1.ResumeLayout(false);
+            this.toolStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -871,6 +963,13 @@ namespace PackageThis
         private System.Windows.Forms.TabPage tabPage_Debug;
         public System.Windows.Forms.RichTextBox debugEdit;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuTutorial;
+        private System.Windows.Forms.DataGridViewTextBoxColumn SizePictures;
+        private System.Windows.Forms.ToolStrip toolStrip1;
+        private System.Windows.Forms.ToolStripButton toolStripButton_DownloadAll;
+        private System.Windows.Forms.ToolStripButton toolStripButton_RemoveAll;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
+        private System.Windows.Forms.ToolStripButton toolStripButton_ExpandAll;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator12;
         
     }
 }

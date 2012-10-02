@@ -32,7 +32,7 @@ namespace PackageThis
         public string targetContentId;
         public string targetLocale;
         public string targetVersion;
-
+        
         public string title;
 
         public bool external;
@@ -360,6 +360,7 @@ namespace PackageThis
                     row["AssetId"] = mtpsNode.targetAssetId;
                     row["Pictures"] = contentItem.numImages;
                     row["Size"] = contentItem.xml == null ? 0 : contentItem.xml.Length;
+                    row["SizePictures"] = contentItem.sizeImages;
                     row["Metadata"] = contentItem.metadata;
                     row["Annotations"] = contentItem.annotations;
                     sdebug = "z9";
