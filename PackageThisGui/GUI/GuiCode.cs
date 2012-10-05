@@ -12,8 +12,12 @@ namespace PackageThis
         public static readonly string VID_MshcFile = "MshcFilename";
 
         static public string GetString(string valueName, string defaultValue)
-        {
-            return (string)Registry.GetValue(key, valueName, defaultValue);
+        {   
+            String s = (string)Registry.GetValue(key, valueName, defaultValue);
+            if (String.IsNullOrEmpty(s))
+                return defaultValue;
+            else 
+                return s;
         }
 
         static public void SetString(string valueName, string value)
@@ -23,7 +27,7 @@ namespace PackageThis
 
         static public bool GetBool(string valueName, bool defaultValue)
         {
-            return (string)Registry.GetValue(key, valueName, (defaultValue) ? "1" : "0") == "1";
+            return GetString(valueName, (defaultValue) ? "1" : "0") == "1";
         }
 
         static public void SetBool(string valueName, bool value)

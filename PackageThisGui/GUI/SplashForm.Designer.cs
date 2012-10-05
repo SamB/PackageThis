@@ -63,10 +63,10 @@
             // statusLabel
             // 
             this.statusLabel.AutoSize = true;
-            this.statusLabel.BackColor = System.Drawing.SystemColors.ControlLight;
+            this.statusLabel.BackColor = System.Drawing.Color.Gainsboro;
             this.statusLabel.Font = new System.Drawing.Font("Arial", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Pixel, ((byte)(0)));
             this.statusLabel.ForeColor = System.Drawing.Color.Black;
-            this.statusLabel.Location = new System.Drawing.Point(367, 271);
+            this.statusLabel.Location = new System.Drawing.Point(313, 270);
             this.statusLabel.Name = "statusLabel";
             this.statusLabel.Size = new System.Drawing.Size(80, 16);
             this.statusLabel.TabIndex = 2;
@@ -92,10 +92,9 @@
             // SplashForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.AutoSize = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackColor = System.Drawing.SystemColors.WindowFrame;
-            this.ClientSize = new System.Drawing.Size(700, 372);
+            this.ClientSize = new System.Drawing.Size(681, 351);
             this.Controls.Add(this.labelVersion);
             this.Controls.Add(this.statusLabel);
             this.Controls.Add(this.label1);
@@ -105,6 +104,7 @@
             this.MinimizeBox = false;
             this.Name = "SplashForm";
             this.ShowIcon = false;
+            this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "SplashForm";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

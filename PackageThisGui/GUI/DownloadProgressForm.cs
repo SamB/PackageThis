@@ -21,6 +21,8 @@ namespace PackageThis
         private TreeNode startingNode;
         private bool decendingTree;
         private Content contentDataSet;
+        private DateTime dlgStartTime;
+        private String dlgTitle;
 
         CultureInfo _currentCulture = CultureInfo.CurrentCulture;
 
@@ -30,9 +32,32 @@ namespace PackageThis
             this.node = node;
             this.contentDataSet = contentDataSet;
             this.decendingTree = true;
+            this.dlgStartTime = DateTime.Now;
 
             InitializeComponent();
 
+            //Scheduled Dialog used
+            StopDate.Value = DateTime.Today;
+            StopTime.Value = DateTime.Now;
+            StopDate.MinDate = DateTime.Now.Date;
+            if (ScheduleForm.sData.Enabled)
+            {
+                StopCbx.Checked = ScheduleForm.sData.xStop;
+                if (StopCbx.Checked)
+                {
+                    StopDate.Value = ScheduleForm.sData.StopDate;
+                    StopTime.Value = ScheduleForm.sData.StopTime;
+                }
+                StopAfterCbx.Checked = ScheduleForm.sData.xStopAfter;
+                if (StopAfterCbx.Checked)
+                {
+                    StopAfterNum.Value = ScheduleForm.sData.StopAfter;
+                }
+            }
+
+            //Off we go
+            this.dlgTitle = this.Text;
+            StopCountdownLabel.Text = "";
             timer1.Enabled = true;
         }
 
@@ -59,6 +84,8 @@ namespace PackageThis
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+            String sText;
+
             if (node == null)
             {
                 timer1.Enabled = false;
@@ -67,7 +94,6 @@ namespace PackageThis
             }
 
             node.Expand();                    //This triggers the node expand event and gets the child nodes
-            
             if(node.Checked == false)
                 node.Checked = true;          //This triggers the node check event and downloads the page
 
@@ -75,18 +101,21 @@ namespace PackageThis
             {
                 MtpsNode mtpsNode = node.Tag as MtpsNode;
                 DownloadLabel.Text = mtpsNode.title;
-
+                DownloadLabel.Update();
                 DataRow row = contentDataSet.Tables["Item"].Rows.Find(mtpsNode.targetAssetId);
 
                 int topicSize = 0;
                 int picsSize = 0;
                 int picsCount = 0;
-                if (Int32.TryParse(row["Size"].ToString(), out topicSize))
-                    downloadSize += (ulong)topicSize;
-                if (Int32.TryParse(row["SizePictures"].ToString(), out picsSize))
-                    downloadSizeIncudingImages = downloadSizeIncudingImages + (ulong)picsSize + (ulong)topicSize;  //size of topic + images
-                if (Int32.TryParse(row["Pictures"].ToString(), out picsCount))
-                    filesDownloadedIncudingImages += (ulong)picsCount + 1;  // +1 for topic
+                if (row != null)
+                {
+                    if (Int32.TryParse(row["Size"].ToString(), out topicSize))
+                        downloadSize += (ulong)topicSize;
+                    if (Int32.TryParse(row["SizePictures"].ToString(), out picsSize))
+                        downloadSizeIncudingImages = downloadSizeIncudingImages + (ulong)picsSize + (ulong)topicSize;  //size of topic + images
+                    if (Int32.TryParse(row["Pictures"].ToString(), out picsCount))
+                        filesDownloadedIncudingImages += (ulong)picsCount + 1;  // +1 for topic
+                }
 
                 filesDownloaded += 1;
 
@@ -104,6 +133,52 @@ namespace PackageThis
                     toolStripStatusLabel1.BackColor = Color.Red;
                     statusStrip1.BackColor = Color.Red;
                 }
+            }
+
+            //Stop Scheduled?
+            sText = "";
+            if (StopCbx.Checked)
+            {
+                TimeSpan dateDiff = StopDate.Value.Subtract(DateTime.Today);
+                TimeSpan timeDiff = StopTime.Value.Subtract(DateTime.Now);
+                TimeSpan _dt = dateDiff.Add(timeDiff);
+
+                if ((int)_dt.TotalDays > 0)
+                    sText += ((int)_dt.TotalDays).ToString() + " days; ";
+                if ((int)_dt.TotalSeconds > 0)
+                    sText += _dt.Hours.ToString() + ":"
+                        + _dt.Minutes.ToString() + ":"
+                        + _dt.Seconds.ToString();
+
+                if (_dt.TotalSeconds <= 0)
+                {
+                    timer1.Enabled = false;
+                    this.Close();
+                }
+            }
+            StopCountdownLabel.Text = sText;
+
+            if (StopAfterCbx.Checked && filesDownloadedIncudingImages >= StopAfterNum.Value)
+            {
+                timer1.Enabled = false;
+                this.Close();
+            }
+
+            if (node.Tag != null)
+            {
+                //Time lapse
+                sText = "";
+                TimeSpan timeLapse = DateTime.Now.Subtract(dlgStartTime);
+                if ((int)timeLapse.TotalDays > 0)
+                    sText += ((int)timeLapse.TotalDays).ToString() + " days; ";
+                if ((int)timeLapse.TotalSeconds > 0)
+                {
+                    if (timeLapse.Hours > 0)
+                        sText += timeLapse.Hours.ToString() + ":";
+                    sText += timeLapse.Minutes.ToString() + ":"
+                        + timeLapse.Seconds.ToString();
+                }
+                this.Text = this.dlgTitle + " - " + sText;
             }
 
             if (decendingTree == true && node.FirstNode != null)
@@ -129,7 +204,7 @@ namespace PackageThis
                 timer1.Enabled = false;
                 this.Close();
             }
-            
+
         }
 
         private void RequestCancelButton_Click(object sender, EventArgs e)
@@ -141,7 +216,6 @@ namespace PackageThis
         {
             timer1.Enabled = false;
         }
-
 
 
 

@@ -78,10 +78,11 @@ namespace PackageThis
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.TOCTreeView = new System.Windows.Forms.TreeView();
             this.TreeViewMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.selectSiblingNodesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem_DownloadAll = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem_RemoveAll = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
-            this.expandSiblingNodesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem_ExpandAll = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem_ScheduleDownload = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
             this.gotoWebPage_toolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.gotoMtpsPage_toolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -95,6 +96,7 @@ namespace PackageThis
             this.assetIdDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.picturesDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.sizeDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.SizePictures = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.itemsBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.ContentDataSet = new PackageThis.Content();
             this.tabPage_Online = new System.Windows.Forms.TabPage();
@@ -103,13 +105,12 @@ namespace PackageThis
             this.debugEdit = new System.Windows.Forms.RichTextBox();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.SizePictures = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.toolStripButton_DownloadAll = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton_RemoveAll = new System.Windows.Forms.ToolStripButton();
-            this.toolStripButton_ExpandAll = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripSeparator12 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripButton_ExpandAll = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton_DownloadAll = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButton_Schedule = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -495,6 +496,7 @@ namespace PackageThis
             // 
             // statusStrip1
             // 
+            this.statusStrip1.BackColor = System.Drawing.SystemColors.Control;
             this.statusStrip1.Location = new System.Drawing.Point(0, 602);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(1035, 22);
@@ -541,51 +543,66 @@ namespace PackageThis
             // TreeViewMenu
             // 
             this.TreeViewMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.selectSiblingNodesToolStripMenuItem,
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem,
+            this.toolStripMenuItem_DownloadAll,
+            this.toolStripMenuItem_RemoveAll,
             this.toolStripSeparator8,
-            this.expandSiblingNodesToolStripMenuItem,
+            this.toolStripMenuItem_ExpandAll,
+            this.toolStripMenuItem_ScheduleDownload,
             this.toolStripSeparator10,
             this.gotoWebPage_toolStripMenuItem,
             this.gotoMtpsPage_toolStripMenuItem,
             this.showTocMTPSPageToolStripMenuItem});
             this.TreeViewMenu.Name = "TreeViewMenu";
-            this.TreeViewMenu.Size = new System.Drawing.Size(187, 148);
+            this.TreeViewMenu.Size = new System.Drawing.Size(187, 170);
             // 
-            // selectSiblingNodesToolStripMenuItem
+            // toolStripMenuItem_DownloadAll
             // 
-            this.selectSiblingNodesToolStripMenuItem.AutoToolTip = true;
-            this.selectSiblingNodesToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("selectSiblingNodesToolStripMenuItem.Image")));
-            this.selectSiblingNodesToolStripMenuItem.Name = "selectSiblingNodesToolStripMenuItem";
-            this.selectSiblingNodesToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
-            this.selectSiblingNodesToolStripMenuItem.Text = "Download All";
-            this.selectSiblingNodesToolStripMenuItem.ToolTipText = "Download (& check) selected item and all sub items";
-            this.selectSiblingNodesToolStripMenuItem.Click += new System.EventHandler(this.selectNodeAndChildrenToolStripMenuItem_Click);
+            this.toolStripMenuItem_DownloadAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripMenuItem_DownloadAll.Image")));
+            this.toolStripMenuItem_DownloadAll.Name = "toolStripMenuItem_DownloadAll";
+            this.toolStripMenuItem_DownloadAll.Size = new System.Drawing.Size(186, 22);
+            this.toolStripMenuItem_DownloadAll.Tag = "Download (&& check) selected item and all sub items";
+            this.toolStripMenuItem_DownloadAll.Text = "Download All";
+            this.toolStripMenuItem_DownloadAll.Click += new System.EventHandler(this.toolStripMenuItem_DownloadAll_Click);
+            this.toolStripMenuItem_DownloadAll.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripMenuItem_DownloadAll.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
-            // deselectThisNodeAndAllChildrenToolStripMenuItem
+            // toolStripMenuItem_RemoveAll
             // 
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.AutoToolTip = true;
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("deselectThisNodeAndAllChildrenToolStripMenuItem.Image")));
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Name = "deselectThisNodeAndAllChildrenToolStripMenuItem";
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Text = "Remove All";
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.ToolTipText = "Remove download (& uncheck) item and all sub items";
-            this.deselectThisNodeAndAllChildrenToolStripMenuItem.Click += new System.EventHandler(this.deselectThisNodeAndAllChildrenToolStripMenuItem_Click);
+            this.toolStripMenuItem_RemoveAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripMenuItem_RemoveAll.Image")));
+            this.toolStripMenuItem_RemoveAll.Name = "toolStripMenuItem_RemoveAll";
+            this.toolStripMenuItem_RemoveAll.Size = new System.Drawing.Size(186, 22);
+            this.toolStripMenuItem_RemoveAll.Tag = "Remove downloads (&& uncheck) from selected item and all sub items";
+            this.toolStripMenuItem_RemoveAll.Text = "Remove All";
+            this.toolStripMenuItem_RemoveAll.Click += new System.EventHandler(this.toolStripMenuItem_RemoveAll_Click);
+            this.toolStripMenuItem_RemoveAll.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripMenuItem_RemoveAll.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
             // toolStripSeparator8
             // 
             this.toolStripSeparator8.Name = "toolStripSeparator8";
             this.toolStripSeparator8.Size = new System.Drawing.Size(183, 6);
             // 
-            // expandSiblingNodesToolStripMenuItem
+            // toolStripMenuItem_ExpandAll
             // 
-            this.expandSiblingNodesToolStripMenuItem.AutoToolTip = true;
-            this.expandSiblingNodesToolStripMenuItem.Image = ((System.Drawing.Image)(resources.GetObject("expandSiblingNodesToolStripMenuItem.Image")));
-            this.expandSiblingNodesToolStripMenuItem.Name = "expandSiblingNodesToolStripMenuItem";
-            this.expandSiblingNodesToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
-            this.expandSiblingNodesToolStripMenuItem.Text = "Expand All";
-            this.expandSiblingNodesToolStripMenuItem.ToolTipText = "Expand TOC Branch (no downloads)";
-            this.expandSiblingNodesToolStripMenuItem.Click += new System.EventHandler(this.expandSiblingNodesToolStripMenuItem_Click);
+            this.toolStripMenuItem_ExpandAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripMenuItem_ExpandAll.Image")));
+            this.toolStripMenuItem_ExpandAll.Name = "toolStripMenuItem_ExpandAll";
+            this.toolStripMenuItem_ExpandAll.Size = new System.Drawing.Size(186, 22);
+            this.toolStripMenuItem_ExpandAll.Tag = "Expand selected TOC branch (with no downloads)";
+            this.toolStripMenuItem_ExpandAll.Text = "Expand All";
+            this.toolStripMenuItem_ExpandAll.Click += new System.EventHandler(this.toolStripMenuItem_ExpandAll_Click);
+            this.toolStripMenuItem_ExpandAll.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripMenuItem_ExpandAll.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
+            // 
+            // toolStripMenuItem_ScheduleDownload
+            // 
+            this.toolStripMenuItem_ScheduleDownload.Image = global::PackageThis.Properties.Resources.PackageThis_stopwatch1;
+            this.toolStripMenuItem_ScheduleDownload.Name = "toolStripMenuItem_ScheduleDownload";
+            this.toolStripMenuItem_ScheduleDownload.Size = new System.Drawing.Size(186, 22);
+            this.toolStripMenuItem_ScheduleDownload.Tag = "Schedule a download";
+            this.toolStripMenuItem_ScheduleDownload.Text = "Schedule";
+            this.toolStripMenuItem_ScheduleDownload.Click += new System.EventHandler(this.toolStripMenuItem_ScheduleDownload_Click);
+            this.toolStripMenuItem_ScheduleDownload.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripMenuItem_ScheduleDownload.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
             // toolStripSeparator10
             // 
@@ -596,25 +613,31 @@ namespace PackageThis
             // 
             this.gotoWebPage_toolStripMenuItem.Name = "gotoWebPage_toolStripMenuItem";
             this.gotoWebPage_toolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.gotoWebPage_toolStripMenuItem.Tag = "Show associated web page in browser";
             this.gotoWebPage_toolStripMenuItem.Text = "View Web Page";
-            this.gotoWebPage_toolStripMenuItem.ToolTipText = "Show associated web page in browser";
             this.gotoWebPage_toolStripMenuItem.Click += new System.EventHandler(this.gotoWebPage_toolStripMenuItem_Click);
+            this.gotoWebPage_toolStripMenuItem.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.gotoWebPage_toolStripMenuItem.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
             // gotoMtpsPage_toolStripMenuItem
             // 
             this.gotoMtpsPage_toolStripMenuItem.Name = "gotoMtpsPage_toolStripMenuItem";
             this.gotoMtpsPage_toolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.gotoMtpsPage_toolStripMenuItem.Tag = "Show MTPS (MSDN/TechNet Publishing System) document page in browser";
             this.gotoMtpsPage_toolStripMenuItem.Text = "View Doc MTPS Page";
-            this.gotoMtpsPage_toolStripMenuItem.ToolTipText = "Show MTPS (MSDN/TechNet Publishing System) document page in browser";
             this.gotoMtpsPage_toolStripMenuItem.Click += new System.EventHandler(this.gotoMtpsPage_toolStripMenuItem_Click);
+            this.gotoMtpsPage_toolStripMenuItem.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.gotoMtpsPage_toolStripMenuItem.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
             // showTocMTPSPageToolStripMenuItem
             // 
             this.showTocMTPSPageToolStripMenuItem.Name = "showTocMTPSPageToolStripMenuItem";
             this.showTocMTPSPageToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
+            this.showTocMTPSPageToolStripMenuItem.Tag = "Show MTPS (MSDN/TechNet Publishing System) toc item page in browser";
             this.showTocMTPSPageToolStripMenuItem.Text = "View Toc MTPS Page";
-            this.showTocMTPSPageToolStripMenuItem.ToolTipText = "Show MTPS (MSDN/TechNet Publishing System) toc item page in browser";
             this.showTocMTPSPageToolStripMenuItem.Click += new System.EventHandler(this.gotoTocMTPSPageToolStripMenuItem_Click);
+            this.showTocMTPSPageToolStripMenuItem.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.showTocMTPSPageToolStripMenuItem.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
             // tabControl1
             // 
@@ -720,6 +743,14 @@ namespace PackageThis
             this.sizeDataGridViewTextBoxColumn.ReadOnly = true;
             this.sizeDataGridViewTextBoxColumn.Width = 52;
             // 
+            // SizePictures
+            // 
+            this.SizePictures.DataPropertyName = "SizePictures";
+            this.SizePictures.HeaderText = "SizePictures";
+            this.SizePictures.Name = "SizePictures";
+            this.SizePictures.ReadOnly = true;
+            this.SizePictures.Width = 90;
+            // 
             // itemsBindingSource
             // 
             this.itemsBindingSource.DataMember = "Item";
@@ -783,14 +814,6 @@ namespace PackageThis
             this.saveFileDialog1.DefaultExt = "xml";
             this.saveFileDialog1.Filter = "XML files|*.xml";
             // 
-            // SizePictures
-            // 
-            this.SizePictures.DataPropertyName = "SizePictures";
-            this.SizePictures.HeaderText = "SizePictures";
-            this.SizePictures.Name = "SizePictures";
-            this.SizePictures.ReadOnly = true;
-            this.SizePictures.Width = 90;
-            // 
             // toolStrip1
             // 
             this.toolStrip1.AllowMerge = false;
@@ -801,7 +824,7 @@ namespace PackageThis
             this.toolStripButton_RemoveAll,
             this.toolStripSeparator11,
             this.toolStripButton_ExpandAll,
-            this.toolStripSeparator12});
+            this.toolStripButton_Schedule});
             this.toolStrip1.Location = new System.Drawing.Point(0, 24);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Padding = new System.Windows.Forms.Padding(8, 1, 1, 1);
@@ -809,48 +832,64 @@ namespace PackageThis
             this.toolStrip1.TabIndex = 3;
             this.toolStrip1.Text = "toolStrip1";
             // 
-            // toolStripButton_DownloadAll
-            // 
-            this.toolStripButton_DownloadAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_DownloadAll.Image")));
-            this.toolStripButton_DownloadAll.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton_DownloadAll.Name = "toolStripButton_DownloadAll";
-            this.toolStripButton_DownloadAll.Padding = new System.Windows.Forms.Padding(4);
-            this.toolStripButton_DownloadAll.Size = new System.Drawing.Size(106, 28);
-            this.toolStripButton_DownloadAll.Text = "Download All";
-            this.toolStripButton_DownloadAll.ToolTipText = "Download (& check) selected item and all sub items";
-            this.toolStripButton_DownloadAll.Click += new System.EventHandler(this.toolStripButton_DownloadAll_Click);
-            // 
             // toolStripButton_RemoveAll
             // 
+            this.toolStripButton_RemoveAll.AutoToolTip = false;
             this.toolStripButton_RemoveAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_RemoveAll.Image")));
             this.toolStripButton_RemoveAll.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButton_RemoveAll.Name = "toolStripButton_RemoveAll";
             this.toolStripButton_RemoveAll.Padding = new System.Windows.Forms.Padding(4);
             this.toolStripButton_RemoveAll.Size = new System.Drawing.Size(95, 28);
+            this.toolStripButton_RemoveAll.Tag = "Remove downloads (&& uncheck) from selected item and all sub items";
             this.toolStripButton_RemoveAll.Text = "Remove All";
-            this.toolStripButton_RemoveAll.ToolTipText = "Remove download (& uncheck) item and all sub items";
             this.toolStripButton_RemoveAll.Click += new System.EventHandler(this.toolStripButton_RemoveAll_Click);
-            // 
-            // toolStripButton_ExpandAll
-            // 
-            this.toolStripButton_ExpandAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_ExpandAll.Image")));
-            this.toolStripButton_ExpandAll.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButton_ExpandAll.Name = "toolStripButton_ExpandAll";
-            this.toolStripButton_ExpandAll.Padding = new System.Windows.Forms.Padding(4);
-            this.toolStripButton_ExpandAll.Size = new System.Drawing.Size(90, 28);
-            this.toolStripButton_ExpandAll.Text = "Expand All";
-            this.toolStripButton_ExpandAll.ToolTipText = "Expand TOC Branch (no downloads)";
-            this.toolStripButton_ExpandAll.Click += new System.EventHandler(this.toolStripButton_ExpandAll_Click);
+            this.toolStripButton_RemoveAll.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripButton_RemoveAll.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
             // toolStripSeparator11
             // 
             this.toolStripSeparator11.Name = "toolStripSeparator11";
             this.toolStripSeparator11.Size = new System.Drawing.Size(6, 31);
             // 
-            // toolStripSeparator12
+            // toolStripButton_ExpandAll
             // 
-            this.toolStripSeparator12.Name = "toolStripSeparator12";
-            this.toolStripSeparator12.Size = new System.Drawing.Size(6, 31);
+            this.toolStripButton_ExpandAll.AutoToolTip = false;
+            this.toolStripButton_ExpandAll.Image = ((System.Drawing.Image)(resources.GetObject("toolStripButton_ExpandAll.Image")));
+            this.toolStripButton_ExpandAll.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_ExpandAll.Name = "toolStripButton_ExpandAll";
+            this.toolStripButton_ExpandAll.Padding = new System.Windows.Forms.Padding(4);
+            this.toolStripButton_ExpandAll.Size = new System.Drawing.Size(90, 28);
+            this.toolStripButton_ExpandAll.Tag = "Expand selected TOC branch (with no downloads)";
+            this.toolStripButton_ExpandAll.Text = "Expand All";
+            this.toolStripButton_ExpandAll.Click += new System.EventHandler(this.toolStripButton_ExpandAll_Click);
+            this.toolStripButton_ExpandAll.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripButton_ExpandAll.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
+            // 
+            // toolStripButton_DownloadAll
+            // 
+            this.toolStripButton_DownloadAll.AutoToolTip = false;
+            this.toolStripButton_DownloadAll.Image = global::PackageThis.Properties.Resources.PackageThis_bw_dl;
+            this.toolStripButton_DownloadAll.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_DownloadAll.Name = "toolStripButton_DownloadAll";
+            this.toolStripButton_DownloadAll.Size = new System.Drawing.Size(98, 28);
+            this.toolStripButton_DownloadAll.Tag = "Download (&& check) selected item and all sub items";
+            this.toolStripButton_DownloadAll.Text = "Download All";
+            this.toolStripButton_DownloadAll.Click += new System.EventHandler(this.toolStripButton_DownloadAll_ButtonClick);
+            this.toolStripButton_DownloadAll.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripButton_DownloadAll.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
+            // 
+            // toolStripButton_Schedule
+            // 
+            this.toolStripButton_Schedule.AutoToolTip = false;
+            this.toolStripButton_Schedule.Image = global::PackageThis.Properties.Resources.PackageThis_stopwatch1;
+            this.toolStripButton_Schedule.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButton_Schedule.Name = "toolStripButton_Schedule";
+            this.toolStripButton_Schedule.Size = new System.Drawing.Size(75, 28);
+            this.toolStripButton_Schedule.Tag = "Schedule a download";
+            this.toolStripButton_Schedule.Text = "Schedule";
+            this.toolStripButton_Schedule.Click += new System.EventHandler(this.toolStripButton_Schedule_Click);
+            this.toolStripButton_Schedule.MouseEnter += new System.EventHandler(this.BtnMouseEnter);
+            this.toolStripButton_Schedule.MouseLeave += new System.EventHandler(this.BtnMouseLeave);
             // 
             // MainForm
             // 
@@ -939,9 +978,9 @@ namespace PackageThis
         private System.Windows.Forms.ToolStripMenuItem exportToHxsFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         private System.Windows.Forms.ContextMenuStrip TreeViewMenu;
-        private System.Windows.Forms.ToolStripMenuItem selectSiblingNodesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_DownloadAll;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
-        private System.Windows.Forms.ToolStripMenuItem deselectThisNodeAndAllChildrenToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_RemoveAll;
         private System.Windows.Forms.ToolStripMenuItem exportToChmFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exportToMshcFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem libraryToolStripMenuItem;
@@ -958,18 +997,19 @@ namespace PackageThis
         private System.Windows.Forms.TabPage tabPage_List;
         private System.Windows.Forms.TabPage tabPage_Online;
         private System.Windows.Forms.WebBrowser webBrowser1;
-        private System.Windows.Forms.ToolStripMenuItem expandSiblingNodesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_ExpandAll;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator10;
         private System.Windows.Forms.TabPage tabPage_Debug;
         public System.Windows.Forms.RichTextBox debugEdit;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuTutorial;
         private System.Windows.Forms.DataGridViewTextBoxColumn SizePictures;
         private System.Windows.Forms.ToolStrip toolStrip1;
-        private System.Windows.Forms.ToolStripButton toolStripButton_DownloadAll;
         private System.Windows.Forms.ToolStripButton toolStripButton_RemoveAll;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
         private System.Windows.Forms.ToolStripButton toolStripButton_ExpandAll;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator12;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem_ScheduleDownload;
+        private System.Windows.Forms.ToolStripButton toolStripButton_DownloadAll;
+        private System.Windows.Forms.ToolStripButton toolStripButton_Schedule;
         
     }
 }

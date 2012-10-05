@@ -167,7 +167,6 @@ namespace ContentServiceLibrary
                 document.type = documentTypes.primary;
                 document.selector = "Mtps.Failsafe";
                 documents.Add(document);
-
             }
 
             request.requestedDocuments = documents.ToArray();

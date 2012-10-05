@@ -56,7 +56,7 @@ namespace PackageThis
                 SplashForm.Status("Connecting to server...");  //First time we hit the server (at least in Australia) we get a 15 sec delay
                 populateLocaleMenu();
 
-                SplashForm.Status("Loading controls...");
+                SplashForm.Status("Downloading content...");
                 populateLibraryMenu();
 
                 appController = new AppController(rootContentItem.contentId, currentLocale, rootContentItem.version,
@@ -73,7 +73,6 @@ namespace PackageThis
             }
             finally
             {
-                SplashForm.Done();
             }
         }
 
@@ -81,6 +80,7 @@ namespace PackageThis
         {
             this.BringToFront();
             this.Activate();  //The splash form will kick us to the back. This brings us forward again.
+            SplashForm.Done();
         }
 
         private void selectLocale_Click(object sender, EventArgs e)
@@ -278,7 +278,7 @@ namespace PackageThis
         }
 
 
-        private void selectNodeAndChildrenToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItem_DownloadAll_Click(object sender, EventArgs e)
         {
             if (TOCTreeView.SelectedNode == null)
                 return;
@@ -294,11 +294,45 @@ namespace PackageThis
             {
                 useWaitCursor = true;
             }
+        }
+
+        private void toolStripMenuItem_ScheduleDownload_Click(object sender, EventArgs e)
+        {
+            ScheduleForm.sData.Enabled = false;
+            if (TOCTreeView.SelectedNode == null)
+                return;
+            useWaitCursor = false;  //Don't need a wait corsor as we have a modal dialog
+            try
+            {
+                ScheduleForm sf = new ScheduleForm(TOCTreeView.SelectedNode,
+                    ContentDataSet);
+
+                sf.ShowDialog();
+            }
+            finally
+            {
+                useWaitCursor = true;
+            }
+
+
+            //Proceed with download
+            if (ScheduleForm.sData.Enabled)
+            {
+                try
+                {
+                    toolStripMenuItem_DownloadAll_Click(sender, e);
+                }
+                catch
+                {
+                    ScheduleForm.sData.Enabled = false;
+                }
+            }
 
         }
 
+
         //Expand all sub nodes
-        private void expandSiblingNodesToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItem_ExpandAll_Click(object sender, EventArgs e)
         {
             if (TOCTreeView.SelectedNode == null)
                 return;
@@ -316,10 +350,7 @@ namespace PackageThis
         }
 
 
-
-
-
-        private void deselectThisNodeAndAllChildrenToolStripMenuItem_Click(object sender, EventArgs e)
+        private void toolStripMenuItem_RemoveAll_Click(object sender, EventArgs e)
         {
             appController.UncheckNodes(TOCTreeView.SelectedNode);
 
@@ -591,9 +622,15 @@ namespace PackageThis
             if (tabControl1.SelectedTab == tabPage_Online)
                 ViewSelectedInOnlineTab();
 
-            toolStripButton_DownloadAll.Enabled = _lastTreeNodeSelected != null;
-            toolStripButton_RemoveAll.Enabled = _lastTreeNodeSelected != null;
-            toolStripButton_ExpandAll.Enabled = _lastTreeNodeSelected != null;
+            Boolean isSelected = _lastTreeNodeSelected != null;
+            toolStripButton_RemoveAll.Enabled = isSelected;
+            toolStripButton_ExpandAll.Enabled = isSelected;
+            toolStripButton_Schedule.Enabled = isSelected;
+
+            toolStripMenuItem_DownloadAll.Enabled = isSelected;
+            toolStripMenuItem_RemoveAll.Enabled = isSelected;
+            toolStripMenuItem_ExpandAll.Enabled = isSelected;
+            toolStripMenuItem_ScheduleDownload.Enabled = isSelected;
         }
 
         private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
@@ -605,9 +642,9 @@ namespace PackageThis
 
         // Toolbar 
 
-        private void toolStripButton_DownloadAll_Click(object sender, EventArgs e)
+        private void toolStripButton_DownloadAll_ButtonClick(object sender, EventArgs e)
         {
-            selectNodeAndChildrenToolStripMenuItem_Click(sender, e);
+            toolStripMenuItem_DownloadAll_Click(sender, e);
         }
 
         private void toolStripButton_RemoveAll_Click(object sender, EventArgs e)
@@ -618,8 +655,48 @@ namespace PackageThis
 
         private void toolStripButton_ExpandAll_Click(object sender, EventArgs e)
         {
-            expandSiblingNodesToolStripMenuItem_Click(sender, e);
+            toolStripMenuItem_ExpandAll_Click(sender, e);
         }
+
+        private void toolStripButton_Schedule_Click(object sender, EventArgs e)
+        {
+            toolStripMenuItem_ScheduleDownload_Click(sender, e);
+        }
+
+        //Button Hiver Tips
+
+        private void BtnMouseEnter(object sender, EventArgs e)
+        {
+            if (sender is ToolStripButton)
+            {
+                ToolStripButton item = sender as ToolStripButton;
+                statusStrip1.Items.Clear();
+                if (item.Tag is String)
+                {
+                    statusStrip1.BackColor = SystemColors.Window;
+                    statusStrip1.Items.Add((String)item.Tag);
+                }
+            }
+            if (sender is ToolStripMenuItem)
+            {
+                ToolStripMenuItem item = sender as ToolStripMenuItem;
+                statusStrip1.Items.Clear();
+                if (item.Tag is String)
+                {
+                    statusStrip1.BackColor = SystemColors.Window;
+                    statusStrip1.Items.Add((String)item.Tag);
+                }
+            }
+        }
+
+        private void BtnMouseLeave(object sender, EventArgs e)
+        {
+            statusStrip1.BackColor = SystemColors.Control;
+            statusStrip1.Items.Clear();
+            statusStrip1.Items.Add(rootContentItem.name);  // MSDN or TechNet text
+        }
+
+
 
 
 

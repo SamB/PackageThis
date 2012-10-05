@@ -1,4 +1,11 @@
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1.3.9 -- 5/10/2012 RWC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Added Scheduled Download
+* Fix: Geting strings from registry are empty even though a default value set
+* Updated download dialog -- Can set the dialog stop actions similar to Schedule dialog.
+ToDo: Downloads needs to run on a proper background thread not a timer.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1.3.8 -- 2/10/2012 RWC
