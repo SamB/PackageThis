@@ -13,16 +13,24 @@ namespace PackageThis
 {
     public partial class DownloadProgressForm : Form
     {
-        private ulong downloadSize;
-        private ulong downloadSizeIncudingImages; 
-        private int filesDownloaded;
-        private ulong filesDownloadedIncudingImages; 
         private TreeNode node;
         private TreeNode startingNode;
         private bool decendingTree;
         private Content contentDataSet;
-        private DateTime dlgStartTime;
         private String dlgTitle;
+
+        public struct DownloadData
+        {
+            public DateTime dlgStartTime;
+            public DateTime dlgStopTime;
+            public TimeSpan duration;
+            public ulong countHtmlFiles;
+            public ulong sizeHtmlFiles;
+            public ulong countFiles;      //HTML + Image files
+            public ulong sizeFiles;
+        }
+        private DownloadData dlData;
+        public DownloadData DLData { get { return dlData; } }
 
         CultureInfo _currentCulture = CultureInfo.CurrentCulture;
 
@@ -32,7 +40,7 @@ namespace PackageThis
             this.node = node;
             this.contentDataSet = contentDataSet;
             this.decendingTree = true;
-            this.dlgStartTime = DateTime.Now;
+            dlData.dlgStartTime = DateTime.Now;
 
             InitializeComponent();
 
@@ -110,22 +118,22 @@ namespace PackageThis
                 if (row != null)
                 {
                     if (Int32.TryParse(row["Size"].ToString(), out topicSize))
-                        downloadSize += (ulong)topicSize;
+                        dlData.sizeHtmlFiles += (ulong)topicSize;
                     if (Int32.TryParse(row["SizePictures"].ToString(), out picsSize))
-                        downloadSizeIncudingImages = downloadSizeIncudingImages + (ulong)picsSize + (ulong)topicSize;  //size of topic + images
+                        dlData.sizeFiles = dlData.sizeFiles + (ulong)picsSize + (ulong)topicSize;  //size of topic + images
                     if (Int32.TryParse(row["Pictures"].ToString(), out picsCount))
-                        filesDownloadedIncudingImages += (ulong)picsCount + 1;  // +1 for topic
+                        dlData.countFiles += (ulong)picsCount + 1;  // +1 for topic
                 }
 
-                filesDownloaded += 1;
+                dlData.countHtmlFiles += 1;
 
-                FilesLabel.Text = filesDownloaded.ToString("N0", _currentCulture);
-                TotalFilesLabel.Text = filesDownloadedIncudingImages.ToString("N0", _currentCulture);
-                SizeLabel.Text = convertToBinaryPrefixed(downloadSize);
-                TotalSizeLabel.Text = convertToBinaryPrefixed(downloadSizeIncudingImages);
+                FilesLabel.Text = dlData.countHtmlFiles.ToString("N0", _currentCulture);
+                TotalFilesLabel.Text = dlData.countFiles.ToString("N0", _currentCulture);
+                SizeLabel.Text = convertToBinaryPrefixed(dlData.sizeHtmlFiles);
+                TotalSizeLabel.Text = convertToBinaryPrefixed(dlData.sizeFiles);
 
                 //warning .. Exceeded safe download limit
-                if (filesDownloadedIncudingImages > 10000 && toolStripStatusLabel1.Tag == null)
+                if (dlData.countFiles > 10000 && toolStripStatusLabel1.Tag == null)
                 {
                     toolStripStatusLabel1.Tag = 1;
                     toolStripStatusLabel1.Text = "Warning: Creating packages > 10,000 files is not recommended. Try making several smaller files.";
@@ -158,28 +166,24 @@ namespace PackageThis
             }
             StopCountdownLabel.Text = sText;
 
-            if (StopAfterCbx.Checked && filesDownloadedIncudingImages >= StopAfterNum.Value)
+            if (StopAfterCbx.Checked && dlData.countFiles >= StopAfterNum.Value)
             {
                 timer1.Enabled = false;
                 this.Close();
             }
 
-            if (node.Tag != null)
+            //Time lapse
+            sText = "";
+            TimeSpan timeLapse = DateTime.Now.Subtract(dlData.dlgStartTime);
+            if ((int)timeLapse.TotalSeconds > 0)   //(@"dd\.hh\:mm\:ss")
             {
-                //Time lapse
-                sText = "";
-                TimeSpan timeLapse = DateTime.Now.Subtract(dlgStartTime);
                 if ((int)timeLapse.TotalDays > 0)
-                    sText += ((int)timeLapse.TotalDays).ToString() + " days; ";
-                if ((int)timeLapse.TotalSeconds > 0)
-                {
-                    if (timeLapse.Hours > 0)
-                        sText += timeLapse.Hours.ToString() + ":";
-                    sText += timeLapse.Minutes.ToString() + ":"
-                        + timeLapse.Seconds.ToString();
-                }
-                this.Text = this.dlgTitle + " - " + sText;
+                    sText += timeLapse.ToString(@"dd\.");
+                if (timeLapse.Hours > 0)
+                    sText += timeLapse.ToString(@"hh\:");
+                sText += timeLapse.ToString(@"mm\:ss");
             }
+            this.Text = this.dlgTitle + " - " + sText;
 
             if (decendingTree == true && node.FirstNode != null)
             {
@@ -215,6 +219,8 @@ namespace PackageThis
         private void DownloadProgressForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             timer1.Enabled = false;
+            dlData.dlgStopTime = DateTime.Now;
+            dlData.duration = dlData.dlgStopTime.Subtract(dlData.dlgStartTime);
         }
 
 

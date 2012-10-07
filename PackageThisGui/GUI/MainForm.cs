@@ -277,6 +277,7 @@ namespace PackageThis
                 ContentDataSet.Tables["ItemInstance"].WriteXml(saveFileDialog1.FileName, XmlWriteMode.WriteSchema);
         }
 
+        int _cDownloads = 0;
 
         private void toolStripMenuItem_DownloadAll_Click(object sender, EventArgs e)
         {
@@ -289,6 +290,28 @@ namespace PackageThis
                     ContentDataSet);
 
                 dpf.ShowDialog();
+
+                // display results in debug window
+                DownloadProgressForm.DownloadData stats = dpf.DLData;
+                if (stats.countFiles > 0)
+                {
+                    String dtFormat = "G";
+                    _cDownloads++;
+                    appController._rtDebug.WriteLine("Download Stats (" + _cDownloads.ToString() + ")", Color.BlueViolet, new Font("Verdana", 12, FontStyle.Underline));
+                    if (stats.dlgStartTime.Date == stats.dlgStopTime.Date)
+                        dtFormat = "T"; //time only
+                    appController._rtDebug.WriteLine("Start Time:", stats.dlgStartTime.ToString(dtFormat));
+                    appController._rtDebug.WriteLine("Stop Time:", stats.dlgStopTime.ToString(dtFormat));
+                    appController._rtDebug.WriteLine("Duration:", stats.duration.ToString(@"dd\.hh\:mm\:ss"));
+                    appController._rtDebug.WriteLine("Downloaded (HTML):", stats.countHtmlFiles.ToString("N0"));
+                    appController._rtDebug.WriteLine("Downloaded (Images):", (stats.countFiles - stats.countHtmlFiles).ToString("N0"));
+                    appController._rtDebug.WriteLine("Total Downloaded:", stats.countFiles.ToString("N0"));
+                    appController._rtDebug.WriteLine("Size (HTML):", stats.sizeHtmlFiles.ToString("N0") + " bytes");
+                    appController._rtDebug.WriteLine("Size (Images):", (stats.sizeFiles - stats.sizeHtmlFiles).ToString("N0") + " bytes");
+                    appController._rtDebug.WriteLine("Total Size:", (stats.sizeFiles).ToString("N0") + " bytes");
+                    appController._rtDebug.WriteLine("");
+                }
+
             }
             finally
             {

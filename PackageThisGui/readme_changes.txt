@@ -1,5 +1,11 @@
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1.3.10 -- 6/10/2012 RWC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Report download info (once complete) to the debug window
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1.3.9 -- 5/10/2012 RWC
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Added Scheduled Download
@@ -34,3 +40,13 @@ rules. Thus the best solution is to remove the artificial node and give all topi
 * Added Expand command in Tree menu to expand all sup nodes (no download)
 * Make the work directory <tempDir>\PackageThis\<dateTime>
 * Make the cache directory <tempDir>\PackageThis\cache -- We are attempting to cache downloads for next time
+
+
+>>>> Notes 
+
+* Every tree node.tag points to a MtpsNode record
+* BeforeExpand node event --> If node.Nodes[0].tag = null then 
+   we download topic info without downloading images & create the child nodes filling in their (MtpsNode)node.tag data.
+* BeforeCheck node event -> This time (if unchecked) we load content and download files and store them on disk.
+
+
