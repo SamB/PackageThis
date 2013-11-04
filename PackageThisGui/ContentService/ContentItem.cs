@@ -224,6 +224,7 @@ namespace ContentServiceLibrary
                     switch (primaryDoc.primaryFormat.ToLower())
                     {
                         case "mtps.failsafe":
+                            RemoveDuplicateSentences(primaryDoc.Any);
                             xml = primaryDoc.Any.OuterXml;
                             break;
 
@@ -289,6 +290,40 @@ namespace ContentServiceLibrary
             }
 
         }
+
+        private void RemoveDuplicateSentences(XmlElement node)
+        {
+            var dublicates = new List<XmlNode>();
+            var handledTags = new List<string>();
+
+            foreach (XmlNode sentenceNode in node.SelectNodes("//*[@class='tgtSentence']"))
+            {
+                XmlNode tagIdAttr = sentenceNode.Attributes.GetNamedItem("id");
+                if (tagIdAttr == null)
+                    continue;
+
+                string tagId = tagIdAttr.Value;
+
+                if (handledTags.Contains(tagId))
+                {
+                    dublicates.Add(sentenceNode);
+                    continue;
+                }
+
+                handledTags.Add(tagId);
+            }
+
+            for (int i = dublicates.Count - 1; i >= 0; i--)
+            {
+                XmlNode nodeToRemove = dublicates[i];
+                if (nodeToRemove.ParentNode != null)
+                {
+                    XmlNode parentNode = nodeToRemove.ParentNode;
+                    parentNode.RemoveChild(nodeToRemove);
+                }
+            }
+        }
+
 
         // Returns the navigation node that corresponds to this content. If
         // we give it a navigation node already, it'll return that node, so
